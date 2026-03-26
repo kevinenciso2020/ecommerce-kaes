@@ -1,0 +1,308 @@
+---
+import ShopLayout from '../layouts/ShopLayout.astro'
+
+let featuredProducts: any[] = []
+let categories: any[]       = []
+
+try {
+  const [productsRes, categoriesRes] = await Promise.all([
+    fetch(`${import.meta.env.PUBLIC_API_URL}/products?featured=true&limit=8`),
+    fetch(`${import.meta.env.PUBLIC_API_URL}/products/categories`)
+  ])
+  const productsData = await productsRes.json()
+  featuredProducts   = productsData.products || []
+  categories         = await categoriesRes.json()
+} catch (e) {
+  console.error('Error cargando datos:', e)
+}
+---
+
+<ShopLayout title="Inicio">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-content">
+      <p class="hero-eyebrow">Nueva colección 2025</p>
+      <h1 class="hero-title">Moda que<br/><em>te define</em></h1>
+      <p class="hero-subtitle">Prendas de calidad con estilo único para cada ocasión</p>
+      <div class="hero-actions">
+        <a href="/productos" class="btn btn-primary">Ver colección</a>
+        <a href="/productos?featured=true" class="btn btn-outline">Destacados</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categorías -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Explorar por categoría</h2>
+      <div class="categories-grid">
+        {categories.slice(0, 4).map(cat => (
+          <a href={`/productos?category=${cat.slug}`} class="category-card">
+            <div class="category-image">
+              <span class="category-icon">👕</span>
+            </div>
+            <span class="category-name">{cat.name}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Productos destacados -->
+  {featuredProducts.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Productos destacados</h2>
+          <a href="/productos" class="see-all">Ver todos →</a>
+        </div>
+        <div class="products-grid">
+          {featuredProducts.map(product => (
+            <a href={`/productos/${product.slug}`} class="product-card">
+              <div class="product-image">
+                {product.images?.[0] ? (
+                  <img src={product.images[0].url} alt={product.name} loading="lazy" />
+                ) : (
+                  <div class="product-image-placeholder">📦</div>
+                )}
+              </div>
+              <div class="product-info">
+                <p class="product-category">{product.category?.name}</p>
+                <h3 class="product-name">{product.name}</h3>
+                <p class="product-price">
+                  ${Number(product.price).toLocaleString('es-CO')}
+                </p>
+              </div>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Banner CTA -->
+  <section class="cta-banner">
+    <div class="container">
+      <h2>¿Primera compra?</h2>
+      <p>Usa el cupón <strong>BIENVENIDO10</strong> y obtén 10% de descuento</p>
+      <a href="/auth/register" class="btn btn-primary">Crear cuenta gratis</a>
+    </div>
+  </section>
+
+</ShopLayout>
+
+<style>
+  .hero {
+    min-height:  90vh;
+    display:     flex;
+    align-items: center;
+    background:  linear-gradient(135deg, var(--color-gray-50) 0%, var(--color-white) 100%);
+    padding:     var(--space-16) var(--space-4);
+  }
+
+  .hero-content {
+    max-width:  600px;
+    margin:     0 auto;
+    text-align: center;
+  }
+
+  .hero-eyebrow {
+    font-size:      0.8rem;
+    font-weight:    600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color:          var(--color-accent);
+    margin-bottom:  var(--space-4);
+  }
+
+  .hero-title {
+    font-family:   var(--font-serif);
+    font-size:     clamp(2.5rem, 6vw, 4.5rem);
+    line-height:   1.1;
+    color:         var(--color-black);
+    margin-bottom: var(--space-6);
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color:      var(--color-accent);
+  }
+
+  .hero-subtitle {
+    font-size:     1.1rem;
+    color:         var(--color-gray-600);
+    margin-bottom: var(--space-8);
+    line-height:   1.7;
+  }
+
+  .hero-actions {
+    display:         flex;
+    gap:             var(--space-4);
+    justify-content: center;
+    flex-wrap:       wrap;
+  }
+
+  .section { padding: var(--space-16) 0; }
+
+  .section-header {
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    margin-bottom:   var(--space-8);
+  }
+
+  .section-title {
+    font-family:   var(--font-serif);
+    font-size:     1.8rem;
+    font-weight:   600;
+    color:         var(--color-black);
+    margin-bottom: var(--space-8);
+  }
+
+  .section-header .section-title { margin-bottom: 0; }
+
+  .see-all {
+    font-size:   0.875rem;
+    font-weight: 500;
+    color:       var(--color-gray-600);
+    transition:  color var(--transition);
+  }
+
+  .see-all:hover { color: var(--color-black); }
+
+  .categories-grid {
+    display:               grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:                   var(--space-4);
+  }
+
+  .category-card {
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    gap:            var(--space-3);
+    padding:        var(--space-6);
+    background:     var(--color-gray-50);
+    border-radius:  var(--radius-lg);
+    border:         1.5px solid var(--color-gray-200);
+    transition:     all var(--transition);
+    text-align:     center;
+  }
+
+  .category-card:hover {
+    border-color: var(--color-black);
+    transform:    translateY(-2px);
+    box-shadow:   var(--shadow-md);
+  }
+
+  .category-image {
+    width:           64px;
+    height:          64px;
+    background:      var(--color-gray-100);
+    border-radius:   50%;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    font-size:       1.8rem;
+  }
+
+  .category-name {
+    font-size:   0.9rem;
+    font-weight: 500;
+    color:       var(--color-gray-800);
+  }
+
+  .product-card {
+    display:        flex;
+    flex-direction: column;
+    border-radius:  var(--radius-lg);
+    overflow:       hidden;
+    border:         1.5px solid var(--color-gray-200);
+    transition:     all var(--transition);
+    background:     var(--color-white);
+  }
+
+  .product-card:hover {
+    transform:    translateY(-4px);
+    box-shadow:   var(--shadow-lg);
+    border-color: transparent;
+  }
+
+  .product-image {
+    aspect-ratio: 3/4;
+    overflow:     hidden;
+    background:   var(--color-gray-100);
+  }
+
+  .product-image img {
+    width:      100%;
+    height:     100%;
+    object-fit: cover;
+    transition: transform 400ms ease;
+  }
+
+  .product-card:hover .product-image img { transform: scale(1.05); }
+
+  .product-image-placeholder {
+    width:           100%;
+    height:          100%;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    font-size:       3rem;
+    color:           var(--color-gray-400);
+  }
+
+  .product-info    { padding: var(--space-4); }
+
+  .product-category {
+    font-size:      0.75rem;
+    font-weight:    500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color:          var(--color-gray-400);
+    margin-bottom:  var(--space-1);
+  }
+
+  .product-name {
+    font-size:     0.95rem;
+    font-weight:   500;
+    color:         var(--color-gray-800);
+    margin-bottom: var(--space-2);
+    line-height:   1.3;
+  }
+
+  .product-price {
+    font-size:   1rem;
+    font-weight: 600;
+    color:       var(--color-black);
+  }
+
+  .cta-banner {
+    background: var(--color-black);
+    color:      var(--color-white);
+    padding:    var(--space-16) var(--space-4);
+    text-align: center;
+    margin-top: var(--space-16);
+  }
+
+  .cta-banner h2 {
+    font-family:   var(--font-serif);
+    font-size:     2rem;
+    margin-bottom: var(--space-3);
+  }
+
+  .cta-banner p {
+    color:         var(--color-gray-400);
+    margin-bottom: var(--space-6);
+  }
+
+  .cta-banner strong           { color: var(--color-accent); }
+  .cta-banner .btn-primary     { background: var(--color-white); color: var(--color-black); }
+  .cta-banner .btn-primary:hover { background: var(--color-gray-100); }
+
+  @media (max-width: 768px) {
+    .categories-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>

@@ -1,0 +1,204 @@
+---
+import ShopLayout from '../../layouts/ShopLayout.astro'
+---
+
+<ShopLayout title="Crear cuenta">
+  <div class="auth-page">
+    <div class="auth-card">
+
+      <div class="auth-header">
+        <h1 class="auth-title">Crear cuenta</h1>
+        <p class="auth-subtitle">Únete y empieza a comprar</p>
+      </div>
+
+      <div id="auth-error" class="auth-error" style="display:none"></div>
+
+      <div class="auth-form">
+        <div class="form-group">
+          <label class="form-label">Nombre completo</label>
+          <input
+            type="text"
+            id="name"
+            class="form-input"
+            placeholder="Tu nombre"
+            autocomplete="name"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input
+            type="email"
+            id="email"
+            class="form-input"
+            placeholder="tu@email.com"
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            class="form-input"
+            placeholder="Mínimo 6 caracteres"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Confirmar contraseña</label>
+          <input
+            type="password"
+            id="confirm-password"
+            class="form-input"
+            placeholder="Repite tu contraseña"
+            autocomplete="new-password"
+          />
+        </div>
+
+        <button class="btn btn-primary btn-full" id="register-btn">
+          Crear cuenta
+        </button>
+      </div>
+
+      <div class="auth-footer">
+        <p>¿Ya tienes cuenta? <a href="/auth/login">Inicia sesión</a></p>
+      </div>
+
+    </div>
+  </div>
+</ShopLayout>
+
+<script>
+  import { api } from '../../lib/api.js'
+  import { setAuth } from '../../stores/auth.store.js'
+
+  const nameInput     = document.getElementById('name')             as HTMLInputElement
+  const emailInput    = document.getElementById('email')            as HTMLInputElement
+  const passwordInput = document.getElementById('password')         as HTMLInputElement
+  const confirmInput  = document.getElementById('confirm-password') as HTMLInputElement
+  const registerBtn   = document.getElementById('register-btn')     as HTMLButtonElement
+  const errorDiv      = document.getElementById('auth-error')       as HTMLDivElement
+
+  const showError = (msg: string) => {
+    errorDiv.textContent   = msg
+    errorDiv.style.display = 'block'
+  }
+
+  const setLoading = (loading: boolean) => {
+    registerBtn.disabled    = loading
+    registerBtn.textContent = loading ? 'Creando cuenta...' : 'Crear cuenta'
+  }
+
+  registerBtn.addEventListener('click', async () => {
+    errorDiv.style.display = 'none'
+
+    const name     = nameInput.value.trim()
+    const email    = emailInput.value.trim()
+    const password = passwordInput.value
+    const confirm  = confirmInput.value
+
+    // Validaciones del lado del cliente
+    if (!name || !email || !password) {
+      showError('Por favor completa todos los campos')
+      return
+    }
+
+    if (password.length < 6) {
+      showError('La contraseña debe tener al menos 6 caracteres')
+      return
+    }
+
+    if (password !== confirm) {
+      showError('Las contraseñas no coinciden')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const data = await api.auth.register({ name, email, password })
+
+      localStorage.setItem('refreshToken', data.refreshToken)
+      setAuth(data.user, data.accessToken)
+
+      window.location.href = '/'
+    } catch (err: any) {
+      showError(err.message || 'Error al crear la cuenta')
+    } finally {
+      setLoading(false)
+    }
+  })
+</script>
+
+<style>
+  .auth-page {
+    min-height:      100vh;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    padding:         var(--space-4);
+    background:      var(--color-gray-50);
+  }
+
+  .auth-card {
+    width:         100%;
+    max-width:     440px;
+    background:    var(--color-white);
+    border-radius: var(--radius-lg);
+    border:        1.5px solid var(--color-gray-200);
+    padding:       var(--space-8);
+    box-shadow:    var(--shadow-md);
+  }
+
+  .auth-header {
+    text-align:    center;
+    margin-bottom: var(--space-8);
+  }
+
+  .auth-title {
+    font-family:   var(--font-serif);
+    font-size:     2rem;
+    font-weight:   600;
+    color:         var(--color-black);
+    margin-bottom: var(--space-2);
+  }
+
+  .auth-subtitle {
+    font-size: 0.9rem;
+    color:     var(--color-gray-400);
+  }
+
+  .auth-error {
+    background:    #fee2e2;
+    color:         #991b1b;
+    padding:       var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size:     0.875rem;
+    margin-bottom: var(--space-4);
+  }
+
+  .auth-form {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--space-4);
+  }
+
+  .btn-full { width: 100%; }
+
+  .auth-footer {
+    text-align: center;
+    margin-top: var(--space-6);
+    font-size:  0.875rem;
+    color:      var(--color-gray-600);
+  }
+
+  .auth-footer a {
+    color:       var(--color-black);
+    font-weight: 500;
+  }
+
+  .auth-footer a:hover { text-decoration: underline; }
+</style>

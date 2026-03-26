@@ -1,0 +1,187 @@
+---
+import ShopLayout from '../../layouts/ShopLayout.astro'
+---
+
+<ShopLayout title="Iniciar sesión">
+  <div class="auth-page">
+    <div class="auth-card">
+
+      <div class="auth-header">
+        <h1 class="auth-title">Bienvenido</h1>
+        <p class="auth-subtitle">Inicia sesión en tu cuenta</p>
+      </div>
+
+      <div id="auth-error" class="auth-error" style="display:none"></div>
+
+      <div class="auth-form">
+        <div class="form-group">
+          <label class="form-label">Correo electrónico</label>
+          <input
+            type="email"
+            id="email"
+            class="form-input"
+            placeholder="tu@email.com"
+            autocomplete="email"
+          />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <input
+            type="password"
+            id="password"
+            class="form-input"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+        </div>
+
+        <button class="btn btn-primary btn-full" id="login-btn">
+          Iniciar sesión
+        </button>
+      </div>
+
+      <div class="auth-footer">
+        <p>¿No tienes cuenta? <a href="/auth/register">Regístrate gratis</a></p>
+      </div>
+
+    </div>
+  </div>
+</ShopLayout>
+
+<script>
+  import { api } from '../../lib/api.js'
+  import { setAuth } from '../../stores/auth.store.js'
+
+  const emailInput    = document.getElementById('email')    as HTMLInputElement
+  const passwordInput = document.getElementById('password') as HTMLInputElement
+  const loginBtn      = document.getElementById('login-btn') as HTMLButtonElement
+  const errorDiv      = document.getElementById('auth-error') as HTMLDivElement
+
+  const showError = (msg: string) => {
+    errorDiv.textContent = msg
+    errorDiv.style.display = 'block'
+  }
+
+  const hideError = () => {
+    errorDiv.style.display = 'none'
+  }
+
+  const setLoading = (loading: boolean) => {
+    loginBtn.disabled = loading
+    loginBtn.textContent = loading ? 'Iniciando sesión...' : 'Iniciar sesión'
+  }
+
+  // Login al hacer click
+  loginBtn.addEventListener('click', async () => {
+    hideError()
+
+    const email    = emailInput.value.trim()
+    const password = passwordInput.value
+
+    if (!email || !password) {
+      showError('Por favor completa todos los campos')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const data = await api.auth.login({ email, password })
+
+      // Guardar tokens en localStorage
+      localStorage.setItem('refreshToken', data.refreshToken)
+
+      // Actualizar el store de auth
+      setAuth(data.user, data.accessToken)
+
+      // Redirigir según el rol
+      if (data.user.role === 'ADMIN') {
+        window.location.href = '/admin'
+      } else {
+        window.location.href = '/'
+      }
+    } catch (err: any) {
+      showError(err.message || 'Error al iniciar sesión')
+    } finally {
+      setLoading(false)
+    }
+  })
+
+  // Login al presionar Enter
+  passwordInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginBtn.click()
+  })
+</script>
+
+<style>
+  .auth-page {
+    min-height:      100vh;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    padding:         var(--space-4);
+    background:      var(--color-gray-50);
+  }
+
+  .auth-card {
+    width:         100%;
+    max-width:     440px;
+    background:    var(--color-white);
+    border-radius: var(--radius-lg);
+    border:        1.5px solid var(--color-gray-200);
+    padding:       var(--space-8);
+    box-shadow:    var(--shadow-md);
+  }
+
+  .auth-header {
+    text-align:    center;
+    margin-bottom: var(--space-8);
+  }
+
+  .auth-title {
+    font-family:   var(--font-serif);
+    font-size:     2rem;
+    font-weight:   600;
+    color:         var(--color-black);
+    margin-bottom: var(--space-2);
+  }
+
+  .auth-subtitle {
+    font-size: 0.9rem;
+    color:     var(--color-gray-400);
+  }
+
+  .auth-error {
+    background:    #fee2e2;
+    color:         #991b1b;
+    padding:       var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size:     0.875rem;
+    margin-bottom: var(--space-4);
+  }
+
+  .auth-form {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--space-4);
+  }
+
+  .btn-full { width: 100%; }
+
+  .auth-footer {
+    text-align:  center;
+    margin-top:  var(--space-6);
+    font-size:   0.875rem;
+    color:       var(--color-gray-600);
+  }
+
+  .auth-footer a {
+    color:       var(--color-black);
+    font-weight: 500;
+  }
+
+  .auth-footer a:hover {
+    text-decoration: underline;
+  }
+</style>

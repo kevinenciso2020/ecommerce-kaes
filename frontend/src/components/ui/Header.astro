@@ -1,0 +1,141 @@
+---
+---
+
+<header class="header">
+  <div class="container header-inner">
+    <a href="/" class="logo">Kaes Store</a>
+    <nav class="nav">
+      <a href="/productos" class="nav-link">Productos</a>
+      <a href="/productos?category=camisetas" class="nav-link">Camisetas</a>
+      <a href="/productos?category=pantalones" class="nav-link">Pantalones</a>
+    </nav>
+    <div class="header-actions">
+      <div id="auth-btn-container">
+        <a href="/auth/login" class="btn btn-outline btn-sm">Iniciar sesión</a>
+      </div>
+      <button class="cart-btn" id="cart-toggle-btn">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <path d="M16 10a4 4 0 01-8 0"/>
+        </svg>
+        <span class="cart-count" id="cart-count">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<script type="module">
+  import { cartCount, cartOpen } from '../../stores/cart.store.js'
+  import { currentUser } from '../../stores/auth.store.js'
+
+  cartCount.subscribe((count) => {
+    const el = document.getElementById('cart-count')
+    if (el) el.textContent = String(count)
+  })
+
+  document.getElementById('cart-toggle-btn')?.addEventListener('click', () => {
+    cartOpen.set(!cartOpen.get())
+  })
+
+  currentUser.subscribe((user) => {
+    const container = document.getElementById('auth-btn-container')
+    if (!container) return
+    if (user) {
+      container.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <a href="/perfil" style="font-size:0.875rem;font-weight:500;color:var(--color-gray-800);">${user.name.split(' ')[0]}</a>
+          ${user.role === 'ADMIN' ? `<a href="/admin" style="font-size:0.8rem;padding:0.4rem 0.75rem;background:var(--color-black);color:white;border-radius:6px;">Admin</a>` : ''}
+        </div>
+      `
+    } else {
+      container.innerHTML = `<a href="/auth/login" class="btn btn-outline btn-sm">Iniciar sesión</a>`
+    }
+  })
+</script>
+
+<style>
+  .header {
+    position:        fixed;
+    top:             0;
+    left:            0;
+    right:           0;
+    z-index:         100;
+    height:          var(--header-height);
+    background:      rgba(255,255,255,0.95);
+    backdrop-filter: blur(8px);
+    border-bottom:   1px solid var(--color-gray-200);
+  }
+
+  .header-inner {
+    height:          100%;
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    gap:             var(--space-8);
+  }
+
+  .logo {
+    font-family:    var(--font-serif);
+    font-size:      1.4rem;
+    font-weight:    600;
+    letter-spacing: 0.02em;
+    color:          var(--color-black);
+    white-space:    nowrap;
+  }
+
+  .nav {
+    display:         flex;
+    gap:             var(--space-6);
+    flex:            1;
+    justify-content: center;
+  }
+
+  .nav-link {
+    font-size:   0.875rem;
+    font-weight: 500;
+    color:       var(--color-gray-600);
+    transition:  color var(--transition);
+  }
+
+  .nav-link:hover { color: var(--color-black); }
+
+  .header-actions {
+    display:     flex;
+    align-items: center;
+    gap:         var(--space-4);
+  }
+
+  .btn-sm { padding: 0.5rem 1rem; font-size: 0.8rem; }
+
+  .cart-btn {
+    position:    relative;
+    display:     flex;
+    align-items: center;
+    padding:     var(--space-2);
+    color:       var(--color-gray-800);
+    transition:  color var(--transition);
+  }
+
+  .cart-btn:hover { color: var(--color-black); }
+
+  .cart-count {
+    position:        absolute;
+    top:             -4px;
+    right:           -4px;
+    background:      var(--color-black);
+    color:           white;
+    font-size:       0.65rem;
+    font-weight:     600;
+    width:           18px;
+    height:          18px;
+    border-radius:   50%;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+  }
+
+  @media (max-width: 768px) {
+    .nav { display: none; }
+  }
+</style>
