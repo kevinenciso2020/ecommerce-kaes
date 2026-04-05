@@ -1,0 +1,405 @@
+---
+import ShopLayout from '../layouts/ShopLayout.astro'
+---
+
+<ShopLayout title="Checkout">
+  <div class="checkout-page container">
+
+    <h1 class="page-title">Finalizar compra</h1>
+
+    <div id="checkout-empty" style="display:none" class="checkout-empty">
+      <p>No tienes productos en el carrito</p>
+      <a href="/productos" class="btn btn-primary">Ver productos</a>
+    </div>
+
+    <div id="checkout-content" style="display:none" class="checkout-layout">
+
+      <!-- Formulario -->
+      <div class="checkout-form">
+
+        <div class="form-section">
+          <h2 class="section-title">Información de contacto</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Nombre completo</label>
+              <input type="text" id="full-name" class="form-input" placeholder="Tu nombre" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Teléfono</label>
+              <input type="tel" id="phone" class="form-input" placeholder="300 000 0000" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="section-title">Dirección de envío</h2>
+          <div class="form-group">
+            <label class="form-label">Dirección</label>
+            <input type="text" id="street" class="form-input" placeholder="Calle, número, apto" />
+          </div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Ciudad</label>
+              <input type="text" id="city" class="form-input" placeholder="Ciudad" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Departamento</label>
+              <input type="text" id="department" class="form-input" placeholder="Departamento" />
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h2 class="section-title">Método de pago</h2>
+          <div class="payment-methods">
+            <label class="payment-option">
+              <input type="radio" name="payment" value="stripe" checked />
+              <div class="payment-card">
+                <span class="payment-icon">💳</span>
+                <div>
+                  <p class="payment-name">Tarjeta de crédito/débito</p>
+                  <p class="payment-desc">Visa, Mastercard, American Express</p>
+                </div>
+              </div>
+            </label>
+            <label class="payment-option">
+              <input type="radio" name="payment" value="mercadopago" />
+              <div class="payment-card">
+                <span class="payment-icon">🏦</span>
+                <div>
+                  <p class="payment-name">MercadoPago</p>
+                  <p class="payment-desc">PSE, Nequi, efectivo y más</p>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div id="checkout-error" class="checkout-error" style="display:none"></div>
+
+        <button class="btn btn-primary btn-full" id="place-order-btn">
+          Confirmar pedido
+        </button>
+
+      </div>
+
+      <!-- Resumen -->
+      <div class="order-summary">
+        <h2 class="summary-title">Tu pedido</h2>
+        <div id="order-items"></div>
+        <div class="summary-divider"></div>
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span id="order-subtotal">$0</span>
+        </div>
+        <div class="summary-row">
+          <span>Descuento</span>
+          <span id="order-discount" class="discount-amount">$0</span>
+        </div>
+        <div class="summary-row">
+          <span>Envío</span>
+          <span class="shipping-free">Gratis</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total-row">
+          <span>Total</span>
+          <span id="order-total">$0</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</ShopLayout>
+
+<script>
+  import { cartItems, cartTotal, clearCart } from '../stores/cart.store.js'
+  import { api } from '../lib/api.js'
+
+  const items = cartItems.get()
+  const total = cartTotal.get()
+
+  // Verificar si hay items
+  if (items.length === 0) {
+    document.getElementById('checkout-empty').style.display = 'flex'
+  } else {
+    document.getElementById('checkout-content').style.display = 'grid'
+
+    // Renderizar items del resumen
+    const orderItemsEl = document.getElementById('order-items')
+    if (orderItemsEl) {
+      orderItemsEl.innerHTML = items.map(item => `
+        <div class="order-item">
+          <div class="order-item-image">
+            ${item.image
+              ? `<img src="${item.image}" alt="${item.name}" />`
+              : `<div class="order-item-placeholder">📦</div>`
+            }
+            <span class="order-item-qty">${item.quantity}</span>
+          </div>
+          <div class="order-item-info">
+            <p class="order-item-name">${item.name}</p>
+            ${item.size  ? `<p class="order-item-variant">Talla: ${item.size}</p>`  : ''}
+            ${item.color ? `<p class="order-item-variant">Color: ${item.color}</p>` : ''}
+          </div>
+          <p class="order-item-price">$${Number(item.price * item.quantity).toLocaleString('es-CO')}</p>
+        </div>
+      `).join('')
+    }
+
+    const formatted = '$' + Number(total).toLocaleString('es-CO')
+    document.getElementById('order-subtotal').textContent = formatted
+    document.getElementById('order-total').textContent    = formatted
+  }
+
+  // Confirmar pedido
+  document.getElementById('place-order-btn')?.addEventListener('click', async () => {
+    const user = localStorage.getItem('user')
+    if (!user) {
+      window.location.href = '/auth/login'
+      return
+    }
+
+    const fullName   = document.getElementById('full-name').value.trim()
+    const street     = document.getElementById('street').value.trim()
+    const city       = document.getElementById('city').value.trim()
+    const department = document.getElementById('department').value.trim()
+    const errorEl    = document.getElementById('checkout-error')
+    const btn        = document.getElementById('place-order-btn')
+
+    if (!fullName || !street || !city || !department) {
+      errorEl.textContent   = 'Por favor completa todos los campos'
+      errorEl.style.display = 'block'
+      return
+    }
+
+    btn.disabled    = true
+    btn.textContent = 'Procesando...'
+    errorEl.style.display = 'none'
+
+    try {
+      const couponCode = localStorage.getItem('couponCode') || undefined
+
+      const orderItems = cartItems.get().map(item => ({
+        productId: item.id,
+        quantity:  item.quantity,
+        size:      item.size,
+        color:     item.color,
+      }))
+
+      const order = await api.orders.create({
+        items:      orderItems,
+        couponCode,
+        notes:      `Envío a: ${street}, ${city}, ${department}`,
+      })
+
+      // Limpiar carrito y cupón
+      clearCart()
+      localStorage.removeItem('couponCode')
+
+      // Redirigir a confirmación
+      window.location.href = `/perfil/ordenes?success=true&orderId=${order.id}`
+
+    } catch (err) {
+      errorEl.textContent   = err.message || 'Error al procesar el pedido'
+      errorEl.style.display = 'block'
+      btn.disabled    = false
+      btn.textContent = 'Confirmar pedido'
+    }
+  })
+</script>
+
+<style>
+  .checkout-page {
+    padding-top:    calc(var(--header-height) + var(--space-8));
+    padding-bottom: var(--space-16);
+  }
+
+  .page-title {
+    font-family:   var(--font-serif);
+    font-size:     2rem;
+    font-weight:   600;
+    color:         var(--color-black);
+    margin-bottom: var(--space-8);
+  }
+
+  .checkout-empty {
+    flex-direction:  column;
+    align-items:     center;
+    justify-content: center;
+    gap:             var(--space-6);
+    padding:         var(--space-16);
+    text-align:      center;
+    color:           var(--color-gray-400);
+  }
+
+  .checkout-layout {
+    display:               grid;
+    grid-template-columns: 1fr 380px;
+    gap:                   var(--space-8);
+    align-items:           start;
+  }
+
+  .form-section {
+    margin-bottom:  var(--space-8);
+    padding-bottom: var(--space-8);
+    border-bottom:  1.5px solid var(--color-gray-200);
+  }
+
+  .form-section:last-of-type { border-bottom: none; }
+
+  .section-title {
+    font-size:     1rem;
+    font-weight:   600;
+    color:         var(--color-black);
+    margin-bottom: var(--space-4);
+  }
+
+  .form-grid {
+    display:               grid;
+    grid-template-columns: 1fr 1fr;
+    gap:                   var(--space-4);
+  }
+
+  /* Métodos de pago */
+  .payment-methods {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--space-3);
+  }
+
+  .payment-option {
+    cursor: pointer;
+  }
+
+  .payment-option input { display: none; }
+
+  .payment-card {
+    display:       flex;
+    align-items:   center;
+    gap:           var(--space-4);
+    padding:       var(--space-4);
+    border:        1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    transition:    all var(--transition);
+  }
+
+  .payment-option input:checked + .payment-card {
+    border-color: var(--color-black);
+    background:   var(--color-gray-50);
+  }
+
+  .payment-icon  { font-size: 1.5rem; }
+
+  .payment-name  { font-size: 0.9rem; font-weight: 500; color: var(--color-black); }
+  .payment-desc  { font-size: 0.8rem; color: var(--color-gray-400); }
+
+  .checkout-error {
+    background:    #fee2e2;
+    color:         #991b1b;
+    padding:       var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    font-size:     0.875rem;
+    margin-bottom: var(--space-4);
+  }
+
+  .btn-full { width: 100%; }
+
+  /* Resumen */
+  .order-summary {
+    background:    var(--color-white);
+    border:        1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    padding:       var(--space-6);
+    position:      sticky;
+    top:           calc(var(--header-height) + var(--space-4));
+  }
+
+  .summary-title {
+    font-size:     1rem;
+    font-weight:   600;
+    color:         var(--color-black);
+    margin-bottom: var(--space-4);
+  }
+
+  .order-item {
+    display:       flex;
+    align-items:   center;
+    gap:           var(--space-3);
+    padding:       var(--space-3) 0;
+  }
+
+  .order-item-image {
+    position:      relative;
+    width:         56px;
+    height:        70px;
+    border-radius: var(--radius-md);
+    overflow:      hidden;
+    background:    var(--color-gray-100);
+    flex-shrink:   0;
+  }
+
+  .order-item-image img {
+    width:      100%;
+    height:     100%;
+    object-fit: cover;
+  }
+
+  .order-item-placeholder {
+    width:           100%;
+    height:          100%;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    font-size:       1.5rem;
+  }
+
+  .order-item-qty {
+    position:        absolute;
+    top:             -6px;
+    right:           -6px;
+    background:      var(--color-black);
+    color:           white;
+    font-size:       0.65rem;
+    font-weight:     600;
+    width:           18px;
+    height:          18px;
+    border-radius:   50%;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+  }
+
+  .order-item-info { flex: 1; }
+  .order-item-name    { font-size: 0.875rem; font-weight: 500; color: var(--color-black); }
+  .order-item-variant { font-size: 0.75rem; color: var(--color-gray-400); }
+  .order-item-price   { font-size: 0.875rem; font-weight: 600; color: var(--color-black); }
+
+  .summary-divider {
+    height:     1.5px;
+    background: var(--color-gray-200);
+    margin:     var(--space-4) 0;
+  }
+
+  .summary-row {
+    display:         flex;
+    justify-content: space-between;
+    font-size:       0.9rem;
+    color:           var(--color-gray-600);
+    margin-bottom:   var(--space-3);
+  }
+
+  .discount-amount { color: var(--color-success); }
+  .shipping-free   { color: var(--color-success); font-weight: 500; }
+
+  .total-row {
+    font-size:  1rem;
+    font-weight: 600;
+    color:      var(--color-black);
+    margin-bottom: var(--space-6);
+  }
+
+  @media (max-width: 768px) {
+    .checkout-layout { grid-template-columns: 1fr; }
+    .form-grid       { grid-template-columns: 1fr; }
+  }
+</style>
