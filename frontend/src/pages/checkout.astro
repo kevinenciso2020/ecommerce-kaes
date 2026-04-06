@@ -124,7 +124,6 @@ import ShopLayout from '../layouts/ShopLayout.astro'
   } else {
     document.getElementById('checkout-content').style.display = 'grid'
 
-    // Renderizar items del resumen
     const orderItemsEl = document.getElementById('order-items')
     if (orderItemsEl) {
       orderItemsEl.innerHTML = items.map(item => `
@@ -159,13 +158,22 @@ import ShopLayout from '../layouts/ShopLayout.astro'
       return
     }
 
-    const fullName   = document.getElementById('full-name').value.trim()
-    const street     = document.getElementById('street').value.trim()
-    const city       = document.getElementById('city').value.trim()
-    const department = document.getElementById('department').value.trim()
-    const errorEl    = document.getElementById('checkout-error')
-    const btn        = document.getElementById('place-order-btn')
+    // ✅ Tipado correcto
+    const fullNameInput   = document.getElementById('full-name') as HTMLInputElement
+    const streetInput     = document.getElementById('street') as HTMLInputElement
+    const cityInput       = document.getElementById('city') as HTMLInputElement
+    const departmentInput = document.getElementById('department') as HTMLInputElement
 
+    const errorEl = document.getElementById('checkout-error') as HTMLElement
+    const btn     = document.getElementById('place-order-btn') as HTMLButtonElement
+
+    // ✅ Obtener valores
+    const fullName   = fullNameInput?.value.trim()
+    const street     = streetInput?.value.trim()
+    const city       = cityInput?.value.trim()
+    const department = departmentInput?.value.trim()
+
+    // ✅ Validación
     if (!fullName || !street || !city || !department) {
       errorEl.textContent   = 'Por favor completa todos los campos'
       errorEl.style.display = 'block'
@@ -187,16 +195,16 @@ import ShopLayout from '../layouts/ShopLayout.astro'
       }))
 
       const order = await api.orders.create({
-        items:      orderItems,
+        items: orderItems,
         couponCode,
-        notes:      `Envío a: ${street}, ${city}, ${department}`,
+        notes: `Envío a: ${street}, ${city}, ${department}`,
       })
 
-      // Limpiar carrito y cupón
+      // ✅ Limpiar carrito
       clearCart()
       localStorage.removeItem('couponCode')
 
-      // Redirigir a confirmación
+      // ✅ Redirigir
       window.location.href = `/perfil/ordenes?success=true&orderId=${order.id}`
 
     } catch (err) {

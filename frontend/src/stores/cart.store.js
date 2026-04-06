@@ -13,6 +13,14 @@ if (typeof window !== 'undefined') {
   })
 }
 
+const storedCart = localStorage.getItem('cart')
+
+export const cart = atom(storedCart ? JSON.parse(storedCart) : [])
+
+cart.subscribe(value => {
+  localStorage.setItem('cart', JSON.stringify(value))
+})
+
 export const cartCount = computed(cartItems, items =>
   items.reduce((sum, item) => sum + item.quantity, 0)
 )

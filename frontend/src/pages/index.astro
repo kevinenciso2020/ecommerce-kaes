@@ -4,14 +4,23 @@ import ShopLayout from '../layouts/ShopLayout.astro'
 let featuredProducts: any[] = []
 let categories: any[]       = []
 
+const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api/v1'
+
 try {
   const [productsRes, categoriesRes] = await Promise.all([
-    fetch(`${import.meta.env.PUBLIC_API_URL}/products?featured=true&limit=8`),
-    fetch(`${import.meta.env.PUBLIC_API_URL}/products/categories`)
+    fetch(`${apiUrl}/products?featured=true&limit=8`),
+    fetch(`${apiUrl}/products/categories`)
   ])
-  const productsData = await productsRes.json()
-  featuredProducts   = productsData.products || []
-  categories         = await categoriesRes.json()
+
+  if (productsRes.ok) {
+    const productsData = await productsRes.json()
+    featuredProducts   = Array.isArray(productsData.products) ? productsData.products : []
+  }
+
+  if (categoriesRes.ok) {
+    const catData = await categoriesRes.json()
+    categories    = Array.isArray(catData) ? catData : []
+  }
 } catch (e) {
   console.error('Error cargando datos:', e)
 }
@@ -19,7 +28,6 @@ try {
 
 <ShopLayout title="Inicio">
 
-  <!-- Hero -->
   <section class="hero">
     <div class="hero-content">
       <p class="hero-eyebrow">Nueva colección 2025</p>
@@ -32,24 +40,27 @@ try {
     </div>
   </section>
 
-  <!-- Categorías -->
-  <section class="section">
-    <div class="container">
-      <h2 class="section-title">Explorar por categoría</h2>
-      <div class="categories-grid">
-        {categories.slice(0, 4).map(cat => (
-          <a href={`/productos?category=${cat.slug}`} class="category-card">
-            <div class="category-image">
-              <span class="category-icon">👕</span>
-            </div>
-            <span class="category-name">{cat.name}</span>
-          </a>
-        ))}
+  {categories.length > 0 && (
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Explorar por categoría</h2>
+        <div class="categories-grid">
+          {categories.slice(0, 4).map(cat => {
+            const url = `/productos?category=${cat.slug}`
+            return (
+              <a href={url} class="category-card">
+                <div class="category-image">
+                  <span class="category-icon">👕</span>
+                </div>
+                <span class="category-name">{cat.name}</span>
+              </a>
+            )
+          })}
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+  )}
 
-  <!-- Productos destacados -->
   {featuredProducts.length > 0 && (
     <section class="section">
       <div class="container">
@@ -58,30 +69,31 @@ try {
           <a href="/productos" class="see-all">Ver todos →</a>
         </div>
         <div class="products-grid">
-          {featuredProducts.map(product => (
-            <a href={`/productos/${product.slug}`} class="product-card">
-              <div class="product-image">
-                {product.images?.[0] ? (
-                  <img src={product.images[0].url} alt={product.name} loading="lazy" />
-                ) : (
-                  <div class="product-image-placeholder">📦</div>
-                )}
-              </div>
-              <div class="product-info">
-                <p class="product-category">{product.category?.name}</p>
-                <h3 class="product-name">{product.name}</h3>
-                <p class="product-price">
-                  ${Number(product.price).toLocaleString('es-CO')}
-                </p>
-              </div>
-            </a>
-          ))}
+          {featuredProducts.map(product => {
+            const url   = `/productos/${product.slug}`
+            const img   = product.images?.[0]?.url
+            const price = Number(product.price).toLocaleString('es-CO')
+            return (
+              <a href={url} class="product-card">
+                <div class="product-image">
+                  {img
+                    ? <img src={img} alt={product.name} loading="lazy" />
+                    : <div class="product-image-placeholder">📦</div>
+                  }
+                </div>
+                <div class="product-info">
+                  <p class="product-category">{product.category?.name}</p>
+                  <h3 class="product-name">{product.name}</h3>
+                  <p class="product-price">${price}</p>
+                </div>
+              </a>
+            )
+          })}
         </div>
       </div>
     </section>
   )}
 
-  <!-- Banner CTA -->
   <section class="cta-banner">
     <div class="container">
       <h2>¿Primera compra?</h2>
@@ -298,8 +310,8 @@ try {
     margin-bottom: var(--space-6);
   }
 
-  .cta-banner strong           { color: var(--color-accent); }
-  .cta-banner .btn-primary     { background: var(--color-white); color: var(--color-black); }
+  .cta-banner strong             { color: var(--color-accent); }
+  .cta-banner .btn-primary       { background: var(--color-white); color: var(--color-black); }
   .cta-banner .btn-primary:hover { background: var(--color-gray-100); }
 
   @media (max-width: 768px) {
