@@ -1,0 +1,168 @@
+---
+import ShopLayout from '../layouts/ShopLayout.astro'
+---
+
+<ShopLayout title="Mi perfil">
+  <div class="perfil-page container" id="perfil-content" style="display:none">
+
+    <h1 class="page-title">Mi cuenta</h1>
+
+    <div class="perfil-grid">
+      <div class="perfil-card">
+        <h2 class="card-title">Información personal</h2>
+        <div id="user-info" class="user-info"></div>
+        <button class="btn btn-outline" id="logout-btn">Cerrar sesión</button>
+      </div>
+
+      <div class="perfil-card">
+        <h2 class="card-title">Mis órdenes</h2>
+        <div id="orders-list">
+          <p class="loading-text">Cargando...</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="perfil-empty" style="display:none" class="perfil-empty">
+    <p>Debes iniciar sesión para ver tu perfil</p>
+    <a href="/auth/login" class="btn btn-primary">Iniciar sesión</a>
+  </div>
+</ShopLayout>
+
+<script>
+  import { currentUser, clearAuth } from '../stores/auth.store.js'
+  import { api } from '../lib/api.js'
+
+  const user = currentUser.get()
+
+  if (!user) {
+    document.getElementById('perfil-empty')!.style.display = 'flex'
+  } else {
+    document.getElementById('perfil-content')!.style.display = 'block'
+
+    document.getElementById('user-info')!.innerHTML = `
+      <div class="info-row"><span class="info-label">Nombre</span><span>${user.name}</span></div>
+      <div class="info-row"><span class="info-label">Email</span><span>${user.email}</span></div>
+      <div class="info-row"><span class="info-label">Rol</span><span>${user.role === 'ADMIN' ? 'Administrador' : 'Cliente'}</span></div>
+    `
+
+    api.orders.list().then((orders: any[]) => {
+      const el = document.getElementById('orders-list')!
+      if (!orders.length) {
+        el.innerHTML = '<p class="empty-text">No tienes órdenes aún</p>'
+        return
+      }
+      el.innerHTML = orders.map(order => `
+        <div class="order-row">
+          <span class="order-id">#${order.id.slice(-6).toUpperCase()}</span>
+          <span class="order-date">${new Date(order.createdAt).toLocaleDateString('es-CO')}</span>
+          <span class="badge badge-gray">${order.status}</span>
+          <span class="order-total">$${Number(order.total).toLocaleString('es-CO')}</span>
+        </div>
+      `).join('')
+    }).catch(() => {
+      document.getElementById('orders-list')!.innerHTML = '<p class="empty-text">Error cargando órdenes</p>'
+    })
+
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
+      const refreshToken = localStorage.getItem('refreshToken')
+      clearAuth()
+      if (refreshToken) api.auth.logout(refreshToken).catch(() => {})
+      window.location.href = '/'
+    })
+  }
+</script>
+
+<style>
+  .perfil-page {
+    padding-top:    calc(60px + 2rem);
+    padding-bottom: 4rem;
+  }
+
+  .page-title {
+    font-family:   var(--font-serif);
+    font-size:     2rem;
+    font-weight:   600;
+    color:         var(--color-black);
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--color-gray-200);
+  }
+
+  .perfil-grid {
+    display:               grid;
+    grid-template-columns: 300px 1fr;
+    gap:                   2rem;
+    align-items:           start;
+  }
+
+  .perfil-card {
+    background:     var(--color-white);
+    border:         1px solid var(--color-gray-200);
+    border-radius:  8px;
+    padding:        1.5rem;
+    display:        flex;
+    flex-direction: column;
+    gap:            1rem;
+  }
+
+  .card-title {
+    font-size:     0.7rem;
+    font-weight:   600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color:         var(--color-gray-400);
+    margin-bottom: 0.5rem;
+  }
+
+  .info-row {
+    display:         flex;
+    justify-content: space-between;
+    align-items:     center;
+    padding:         0.6rem 0;
+    border-bottom:   1px solid var(--color-gray-100);
+    font-size:       0.875rem;
+  }
+
+  .info-label {
+    color:       var(--color-gray-400);
+    font-weight: 500;
+  }
+
+  .loading-text,
+  .empty-text {
+    font-size: 0.875rem;
+    color:     var(--color-gray-400);
+    padding:   1rem 0;
+  }
+
+  .order-row {
+    display:         flex;
+    justify-content: space-between;
+    align-items:     center;
+    padding:         0.75rem 0;
+    border-bottom:   1px solid var(--color-gray-100);
+    font-size:       0.875rem;
+    gap:             1rem;
+  }
+
+  .order-id    { font-weight: 600; color: var(--color-black); font-size: 0.8rem; }
+  .order-date  { color: var(--color-gray-400); font-size: 0.8rem; }
+  .order-total { font-weight: 600; color: var(--color-black); }
+
+  .perfil-empty {
+    min-height:      70vh;
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+    justify-content: center;
+    gap:             1rem;
+    color:           var(--color-gray-400);
+    text-align:      center;
+  }
+
+  @media (max-width: 768px) {
+    .perfil-grid { grid-template-columns: 1fr; }
+  }
+</style>
