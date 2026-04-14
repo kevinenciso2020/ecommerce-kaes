@@ -62,3 +62,14 @@ app.listen(PORT, () => {
 })
 
 export default app
+
+
+// Importante: esta línea debe ir ANTES del middleware json() global
+// para que el webhook reciba el body raw (necesario para verificar firma)
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
+// Resto de middlewares
+app.use(express.json());
+
+// Rutas
+app.use("/api/payments", paymentRoutes);
