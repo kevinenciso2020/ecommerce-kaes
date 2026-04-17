@@ -118,7 +118,31 @@ import ShopLayout from '../layouts/ShopLayout.astro'
   const items = cartItems.get()
   const total = cartTotal.get()
 
-  // Verificar si hay items
+  const showDiscount = async () => {
+    const couponCode = localStorage.getItem('couponCode')
+    if (!couponCode) return
+
+    try {
+      const coupon = await api.coupons.validate(couponCode, total)
+      localStorage.setItem('couponDiscount', JSON.stringify(coupon))
+
+      const newTotal = total - coupon.discount
+      document.getElementById('order-discount').textContent =
+        `-$${Number(coupon.discount).toLocaleString('es-CO')}`
+      document.getElementById('order-total').textContent =
+        '$' + Number(Math.max(0, newTotal)).toLocaleString('es-CO')
+    } catch (err) {
+      localStorage.removeItem('couponCode')
+      localStorage.removeItem('couponDiscount')
+      document.getElementById('order-discount').textContent = '$0'
+      const errorEl = document.getElementById('checkout-error')
+      if (errorEl) {
+        errorEl.textContent = err.message || 'Cupón no válido'
+        errorEl.style.display = 'block'
+      }
+    }
+  }
+
   if (items.length === 0) {
     document.getElementById('checkout-empty').style.display = 'flex'
   } else {
@@ -150,7 +174,8 @@ import ShopLayout from '../layouts/ShopLayout.astro'
     document.getElementById('order-total').textContent    = formatted
   }
 
-  // Confirmar pedido
+  showDiscount()
+
   document.getElementById('place-order-btn')?.addEventListener('click', async () => {
     const user = localStorage.getItem('user')
     if (!user) {
@@ -158,22 +183,19 @@ import ShopLayout from '../layouts/ShopLayout.astro'
       return
     }
 
-    // ✅ Tipado correcto
-    const fullNameInput   = document.getElementById('full-name') as HTMLInputElement
-    const streetInput     = document.getElementById('street') as HTMLInputElement
-    const cityInput       = document.getElementById('city') as HTMLInputElement
-    const departmentInput = document.getElementById('department') as HTMLInputElement
+    const fullNameInput   = document.getElementById('full-name')
+    const streetInput     = document.getElementById('street')
+    const cityInput       = document.getElementById('city')
+    const departmentInput = document.getElementById('department')
 
-    const errorEl = document.getElementById('checkout-error') as HTMLElement
-    const btn     = document.getElementById('place-order-btn') as HTMLButtonElement
+    const errorEl = document.getElementById('checkout-error')
+    const btn     = document.getElementById('place-order-btn')
 
-    // ✅ Obtener valores
     const fullName   = fullNameInput?.value.trim()
     const street     = streetInput?.value.trim()
     const city       = cityInput?.value.trim()
     const department = departmentInput?.value.trim()
 
-    // ✅ Validación
     if (!fullName || !street || !city || !department) {
       errorEl.textContent   = 'Por favor completa todos los campos'
       errorEl.style.display = 'block'
@@ -200,9 +222,9 @@ import ShopLayout from '../layouts/ShopLayout.astro'
         notes: `Envío a: ${street}, ${city}, ${department}`,
       })
 
-      // ✅ Limpiar carrito
       clearCart()
       localStorage.removeItem('couponCode')
+      localStorage.removeItem('couponDiscount')
 
       // ✅ Redirigir
       window.location.href = `/perfil/ordenes?success=true&orderId=${order.id}`

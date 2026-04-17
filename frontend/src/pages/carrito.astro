@@ -67,6 +67,7 @@ import ShopLayout from '../layouts/ShopLayout.astro'
 
 <script>
   import { cartItems, cartTotal, removeFromCart, updateQuantity, clearCart } from '../stores/cart.store.js'
+  import { api } from '../lib/api.js'
 
   const renderCart = (items) => {
     const total    = cartTotal.get()
@@ -138,18 +139,52 @@ import ShopLayout from '../layouts/ShopLayout.astro'
   }
 
   // Aplicar cupón
-  document.getElementById('apply-coupon-btn')?.addEventListener('click', () => {
+  document.getElementById('apply-coupon-btn')?.addEventListener('click', async () => {
     const code    = (document.getElementById('coupon-input')).value.trim()
     const msgEl   = document.getElementById('coupon-message')
+    const btnEl  = document.getElementById('apply-coupon-btn')
     if (!code || !msgEl) return
 
-    // Guardar el cupón para usarlo en el checkout
-    localStorage.setItem('couponCode', code.toUpperCase())
-    msgEl.textContent   = `Cupón "${code.toUpperCase()}" aplicado. El descuento se verá en el checkout.`
-    msgEl.style.display = 'block'
-    msgEl.style.background = '#dcfce7'
-    msgEl.style.color      = '#166534'
+    btnEl.disabled = true
+    btnEl.textContent = 'Validando...'
+
+    try {
+      const subtotal = cartTotal.get()
+      const coupon = await api.coupons.validate(code, subtotal)
+
+      localStorage.setItem('couponCode', coupon.code)
+      localStorage.setItem('couponDiscount', JSON.stringify(coupon))
+
+      const discountFormatted = coupon.type === 'PERCENTAGE'
+        ? `${coupon.value}%`
+        : `$${Number(coupon.discount).toLocaleString('es-CO')}`
+
+      msgEl.textContent   = `Cupón aplicado: -${discountFormatted}`
+      msgEl.style.display = 'block'
+      msgEl.style.background = '#dcfce7'
+      msgEl.style.color      = '#166534'
+
+      updateTotalWithDiscount(subtotal, coupon.discount)
+    } catch (err) {
+      localStorage.removeItem('couponCode')
+      localStorage.removeItem('couponDiscount')
+      msgEl.textContent   = err.message || 'Cupón no válido'
+      msgEl.style.display = 'block'
+      msgEl.style.background = '#fee2e2'
+      msgEl.style.color      = '#991b1b'
+    } finally {
+      btnEl.disabled = false
+      btnEl.textContent = 'Aplicar'
+    }
   })
+
+  const updateTotalWithDiscount = (subtotal, discount) => {
+    const newTotal = subtotal - discount
+    const totalEl = document.getElementById('summary-total')
+    if (totalEl) {
+      totalEl.textContent = '$' + Number(Math.max(0, newTotal)).toLocaleString('es-CO')
+    }
+  }
 
   // Ir al checkout
   document.getElementById('checkout-btn')?.addEventListener('click', () => {

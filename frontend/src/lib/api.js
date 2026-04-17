@@ -54,13 +54,16 @@ export const api = {
     list:   ()     => request('/orders'),
     detail: (id)   => request(`/orders/${id}`),
   },
-  admin: {
+admin: {
     stats:          ()            => request('/admin/stats'),
     orders:         (params = {}) => request(`/admin/orders?${new URLSearchParams(params)}`),
     updateOrder:    (id, status)  => request(`/admin/orders/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
     discounts:      ()            => request('/admin/discounts'),
     createDiscount: (data)        => request('/admin/discounts', { method: 'POST', body: JSON.stringify(data) }),
     coupons:        ()            => request('/admin/coupons'),
-    createCoupon:   (data)        => request('/admin/coupons',   { method: 'POST', body: JSON.stringify(data) }),
+    createCoupon:   (data)      => request('/admin/coupons',   { method: 'POST', body: JSON.stringify(data) }),
+  },
+  coupons: {
+    validate: (code, subtotal = 0) => request(`/coupons/${code}?subtotal=${subtotal}`),
   },
 }

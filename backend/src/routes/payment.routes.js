@@ -152,29 +152,53 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       return res.sendStatus(200);
     }
 
-    // 4. Actualizar el estado de la orden en tu DB
+    // 4. Actualizar el estado de la orden y crear/actualizar el pago en tu DB
     let newOrderStatus;
+    let paymentStatus;
+
     switch (status) {
       case "approved":
-        newOrderStatus = "PAID";
+        newOrderStatus = "CONFIRMED";
+        paymentStatus = "COMPLETED";
         break;
       case "rejected":
-        newOrderStatus = "FAILED";
+        newOrderStatus = "CANCELLED";
+        paymentStatus = "FAILED";
         break;
       case "pending":
       case "in_process":
-        newOrderStatus = "PENDING_PAYMENT";
+        newOrderStatus = "PENDING";
+        paymentStatus = "PENDING";
         break;
       default:
         newOrderStatus = "PENDING";
+        paymentStatus = "PENDING";
     }
 
+    // Actualizar orden
     await prisma.order.update({
-      where: { id: parseInt(orderId) },
+      where: { id: orderId },
       data: {
         status: newOrderStatus,
-        mpPaymentId: paymentId.toString(),
         paidAt: status === "approved" ? new Date() : null,
+      },
+    });
+
+    // Crear o actualizar registro de Payment
+    await prisma.payment.upsert({
+      where: { orderId: orderId },
+      create: {
+        orderId: orderId,
+        provider: "MERCADOPAGO",
+        providerPaymentId: paymentId.toString(),
+        status: paymentStatus,
+        amount: parseFloat(payment.transaction_amount) || 0,
+        currency: payment.currency_id || "COP",
+      },
+      update: {
+        providerPaymentId: paymentId.toString(),
+        status: paymentStatus,
+        amount: parseFloat(payment.transaction_amount) || 0,
       },
     });
 
@@ -198,11 +222,11 @@ router.get("/status/:orderId", async (req, res) => {
     const { orderId } = req.params;
 
     const order = await prisma.order.findUnique({
-      where: { id: parseInt(orderId) },
+      where: { id: orderId },
       select: {
         id: true,
         status: true,
-        mpPaymentId: true,
+        paidAt: true,
         total: true,
       },
     });

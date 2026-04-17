@@ -13,6 +13,7 @@ import orderRoutes    from './routes/order.routes.js'
 import paymentRoutes  from './routes/payment.routes.js'
 import adminRoutes    from './routes/admin.routes.js'
 import cartRoutes     from './routes/cart.routes.js'
+import couponRoutes  from './routes/coupon.routes.js'
 
 const app  = express()
 const PORT = process.env.PORT || 3000
@@ -47,6 +48,7 @@ app.use('/api/v1/orders',   orderRoutes)
 app.use('/api/v1/payments', paymentRoutes)
 app.use('/api/v1/admin',    adminRoutes)
 app.use('/api/v1/cart',     cartRoutes)
+app.use('/api/v1/coupons',  couponRoutes)
 
 // Health check — para verificar que el servidor está vivo
 app.get('/api/health', (req, res) => {
@@ -62,14 +64,3 @@ app.listen(PORT, () => {
 })
 
 export default app
-
-
-// Importante: esta línea debe ir ANTES del middleware json() global
-// para que el webhook reciba el body raw (necesario para verificar firma)
-app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
-
-// Resto de middlewares
-app.use(express.json());
-
-// Rutas
-app.use("/api/payments", paymentRoutes);
