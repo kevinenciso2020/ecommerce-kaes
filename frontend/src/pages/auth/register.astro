@@ -122,7 +122,7 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
       const data = await api.auth.register({ name, email, password })
 
       localStorage.setItem('refreshToken', data.refreshToken)
-      setAuth(data.user, data.accessToken, data.refreshToken)
+      setAuth(data.user, data.accessToken)
 
       window.location.href = '/'
     } catch (err: any) {

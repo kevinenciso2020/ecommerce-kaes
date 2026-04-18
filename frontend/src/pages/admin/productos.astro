@@ -102,14 +102,8 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
         </div>
 
         <div class="form-group">
-          <label class="form-label">Imágenes (URLs de Cloudinary)</label>
-          <input type="text" id="product-image-urls" class="form-input" placeholder="https://res.cloudinary.com/... (una por línea)" />
-          <small>Ingresa las URLs de las imágenes (una por línea)</small>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">O subir archivos</label>
-          <input type="file" id="product-images" class="form-input" accept="image/*" multiple />
+          <label class="form-label">Imágenes (URLs)</label>
+          <input type="text" id="product-image-urls" class="form-input" placeholder="https://... (una por línea)" />
         </div>
 
         <div class="form-actions">
@@ -146,203 +140,251 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
       setupEventListeners()
     }
 
-  async function loadCategories() {
-    try {
-      const categories = await api.categories.list()
-      const catSelect = document.getElementById('filter-category')
-      const prodCatSelect = document.getElementById('product-category')
+    async function loadCategories() {
+      try {
+        const categories = await api.categories.list()
+        const catSelect = document.getElementById('filter-category')
+        const prodCatSelect = document.getElementById('product-category')
 
-      categories.forEach((cat) => {
-        const opt1 = new Option(cat.name, cat.slug)
-        const opt2 = new Option(cat.name, cat.id)
-        catSelect.add(opt1)
-        prodCatSelect.add(opt2)
-      })
-    } catch (err) { console.error(err) }
-  }
+        categories.forEach(function(cat) {
+          const opt1 = new Option(cat.name, cat.slug)
+          const opt2 = new Option(cat.name, cat.id)
+          catSelect.add(opt1)
+          prodCatSelect.add(opt2)
+        })
+      } catch (err) { console.error(err) }
+    }
 
-  async function loadProducts(params = {}) {
-    try {
-      const result = await api.admin.products(params)
-      products = result.products
-      currentPage = result.page
-      totalPages = result.totalPages
-      renderProducts()
-      renderPagination()
-    } catch (err) {
+    async function loadProducts(params) {
+      try {
+        const result = await api.admin.products(params)
+        products = result.products
+        currentPage = result.page
+        totalPages = result.totalPages
+        renderProducts()
+        renderPagination()
+      } catch (err) {
+        const tbody = document.getElementById('products-tbody')
+        if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="error">' + err.message + '</td></tr>'
+      }
+    }
+
+    function renderProducts() {
       const tbody = document.getElementById('products-tbody')
-      tbody.innerHTML = `<tr><td colspan="6" class="error">${err.message}</td></tr>`
-    }
-  }
+      if (!tbody) return
 
-  function renderProducts() {
-    const tbody = document.getElementById('products-tbody')
-    if (products.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="empty">No hay productos</td></tr>'
-      return
-    }
-
-    tbody.innerHTML = products.map(p => `
-      <tr>
-        <td class="product-cell">
-          <div class="product-info">
-            <img src="${p.images[0]?.url || '/placeholder.svg'}" alt="${p.name}" class="product-thumb" />
-            <span class="product-name">${p.name}</span>
-          </div>
-        </td>
-        <td>${p.category?.name || '—'}</td>
-        <td>$${Number(p.price).toLocaleString('es-CO')}</td>
-        <td>${p.stock}</td>
-        <td><span class="status-badge ${p.isActive ? 'active' : 'inactive'}">${p.isActive ? 'Activo' : 'Inactivo'}</span></td>
-        <td>
-          <div class="action-buttons">
-            <button class="btn-icon edit-btn" data-id="${p.id}" title="Editar">✏️</button>
-            <button class="btn-icon delete-btn" data-id="${p.id}" title="Eliminar">🗑️</button>
-          </div>
-        </td>
-      </tr>
-    `).join('')
-
-    document.querySelectorAll('.edit-btn').forEach(btn => {
-      btn.addEventListener('click', () => openEditModal(btn.getAttribute('data-id')))
-    })
-    document.querySelectorAll('.delete-btn').forEach(btn => {
-      btn.addEventListener('click', () => deleteProduct(btn.getAttribute('data-id')))
-    })
-  }
-
-  function renderPagination() {
-    const pag = document.getElementById('pagination')
-    if (totalPages <= 1) { pag.innerHTML = ''; return }
-
-    let html = ''
-    if (currentPage > 1) html += `<button class="page-btn" data-page="${currentPage - 1}">←</button>`
-    html += `<span class="page-info">Página ${currentPage} de ${totalPages}</span>`
-    if (currentPage < totalPages) html += `<button class="page-btn" data-page="${currentPage + 1}">→</button>`
-
-    pag.innerHTML = html
-    pag.querySelectorAll('.page-btn').forEach(btn => {
-      btn.addEventListener('click', () => loadProducts({ page: btn.getAttribute('data-page') }))
-    })
-  }
-
-  function setupEventListeners() {
-    document.getElementById('add-product-btn').addEventListener('click', openModal)
-    document.getElementById('close-modal').addEventListener('click', closeModal)
-    document.getElementById('cancel-btn').addEventListener('click', closeModal)
-    document.getElementById('product-modal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) closeModal()
-    })
-
-    document.getElementById('search-input').addEventListener('input', debounce((e) => {
-      loadProducts({ search: e.target.value })
-    }, 300))
-
-    document.getElementById('filter-category').addEventListener('change', (e) => {
-      loadProducts({ category: e.target.value })
-    })
-
-    document.getElementById('filter-status').addEventListener('change', (e) => {
-      loadProducts({ isActive: e.target.value })
-    })
-
-    document.getElementById('product-form').addEventListener('submit', handleSubmit)
-  }
-
-  function openModal() {
-    document.getElementById('modal-title').textContent = 'Nuevo producto'
-    document.getElementById('product-id').value = ''
-    document.getElementById('product-form').reset()
-    document.getElementById('product-modal').style.display = 'flex'
-  }
-
-  function openEditModal(id) {
-    const product = products.find(p => p.id === id)
-    if (!product) return
-
-    document.getElementById('modal-title').textContent = 'Editar producto'
-    document.getElementById('product-id').value = product.id
-    document.getElementById('product-name').value = product.name
-    document.getElementById('product-description').value = product.description || ''
-    document.getElementById('product-price').value = product.price
-    document.getElementById('product-stock').value = product.stock
-    document.getElementById('product-category').value = product.category?.id || ''
-    document.getElementById('product-featured').checked = product.isFeatured
-
-    document.getElementById('product-modal').style.display = 'flex'
-  }
-
-  function closeModal() {
-    document.getElementById('product-modal').style.display = 'none'
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    const form = e.target
-    const id = document.getElementById('product-id').value
-    const submitBtn = form.querySelector('button[type="submit"]')
-
-    submitBtn.disabled = true
-    submitBtn.textContent = 'Guardando...'
-
-    try {
-      const formData = new FormData()
-      formData.append('name', document.getElementById('product-name').value)
-      formData.append('description', document.getElementById('product-description').value)
-      formData.append('price', document.getElementById('product-price').value)
-      formData.append('stock', document.getElementById('product-stock').value)
-      formData.append('categoryId', document.getElementById('product-category').value)
-      formData.append('isFeatured', document.getElementById('product-featured').checked.toString())
-
-      const imageUrlsInput = document.getElementById('product-image-urls').value.trim()
-      if (imageUrlsInput) {
-        const urls = imageUrlsInput.split('\n').map(u => u.trim()).filter(u => u)
-        if (urls.length > 0) {
-          formData.append('imageUrls', JSON.stringify(urls))
-        }
+      if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty">No hay productos</td></tr>'
+        return
       }
 
-      const files = document.getElementById('product-images').files
-      if (files?.length) {
-        for (let i = 0; i < files.length; i++) formData.append('images', files[i])
+      tbody.innerHTML = products.map(function(p) {
+        return '<tr>' +
+          '<td>' +
+            '<div class="product-cell">' +
+              '<img src="' + (p.images && p.images[0] ? p.images[0].url : '/placeholder.svg') + '" alt="' + p.name + '" class="product-thumb" />' +
+              '<span class="product-name">' + p.name + '</span>' +
+            '</div>' +
+          '</td>' +
+          '<td>' + (p.category ? p.category.name : '—') + '</td>' +
+          '<td>$' + Number(p.price).toLocaleString('es-CO') + '</td>' +
+          '<td>' + p.stock + '</td>' +
+          '<td><span class="status-badge ' + (p.isActive ? 'active' : 'inactive') + '">' + (p.isActive ? 'Activo' : 'Inactivo') + '</span></td>' +
+          '<td>' +
+            '<div class="action-buttons">' +
+              '<button class="btn-icon edit-btn" data-id="' + p.id + '" title="Editar">✏️</button>' +
+              '<button class="btn-icon delete-btn" data-id="' + p.id + '" title="Eliminar">🗑️</button>' +
+            '</div>' +
+          '</td>' +
+        '</tr>'
+      }).join('')
+
+      document.querySelectorAll('.edit-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          editProduct(btn.getAttribute('data-id'))
+        })
+      })
+
+      document.querySelectorAll('.delete-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          if (confirm('¿Estás seguro de eliminar este producto?')) {
+            deleteProduct(btn.getAttribute('data-id'))
+          }
+        })
+      })
+    }
+
+    function renderPagination() {
+      const pag = document.getElementById('pagination')
+      if (!pag) return
+
+      if (totalPages <= 1) {
+        pag.innerHTML = ''
+        return
       }
 
-      if (id) {
-        await api.products.update(id, formData)
+      var html = ''
+      if (currentPage > 1) html += '<button class="page-btn" data-page="' + (currentPage - 1) + '">←</button>'
+      html += '<span class="page-info">Página ' + currentPage + ' de ' + totalPages + '</span>'
+      if (currentPage < totalPages) html += '<button class="page-btn" data-page="' + (currentPage + 1) + '">→</button>'
+
+      pag.innerHTML = html
+
+      pag.querySelectorAll('.page-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          loadProducts({ page: btn.getAttribute('data-page') })
+        })
+      })
+    }
+
+    function setupEventListeners() {
+      const searchInput = document.getElementById('search-input')
+      if (searchInput) {
+        searchInput.addEventListener('input', debounce(function() {
+          loadProducts({ search: this.value })
+        }, 500))
+      }
+
+      const filterCategory = document.getElementById('filter-category')
+      if (filterCategory) {
+        filterCategory.addEventListener('change', function() {
+          loadProducts({ category: this.value })
+        })
+      }
+
+      const filterStatus = document.getElementById('filter-status')
+      if (filterStatus) {
+        filterStatus.addEventListener('change', function() {
+          loadProducts({ isActive: this.value })
+        })
+      }
+
+      const addProductBtn = document.getElementById('add-product-btn')
+      if (addProductBtn) {
+        addProductBtn.addEventListener('click', openModal)
+      }
+
+      const closeModalBtn = document.getElementById('close-modal')
+      if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal)
+      }
+
+      const cancelBtn = document.getElementById('cancel-btn')
+      if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeModal)
+      }
+
+      const productModal = document.getElementById('product-modal')
+      if (productModal) {
+        productModal.addEventListener('click', function(e) {
+          if (e.target === productModal) closeModal()
+        })
+      }
+
+      const productForm = document.getElementById('product-form')
+      if (productForm) {
+        productForm.addEventListener('submit', handleSubmit)
+      }
+    }
+
+    function openModal(product) {
+      const modal = document.getElementById('product-modal')
+      const title = document.getElementById('modal-title')
+      const form = document.getElementById('product-form')
+
+      if (!modal || !title || !form) return
+
+      form.reset()
+
+      if (product) {
+        title.textContent = 'Editar producto'
+        document.getElementById('product-id').value = product.id
+        document.getElementById('product-name').value = product.name
+        document.getElementById('product-description').value = product.description || ''
+        document.getElementById('product-price').value = product.price
+        document.getElementById('product-stock').value = product.stock
+        document.getElementById('product-category').value = product.categoryId || ''
+        document.getElementById('product-featured').checked = product.isFeatured
+        document.getElementById('product-image-urls').value = (product.images || []).map(function(i) { return i.url }).join('\n')
       } else {
-        await api.products.create(formData)
+        title.textContent = 'Nuevo producto'
+        document.getElementById('product-id').value = ''
       }
 
-      closeModal()
-      loadProducts()
-    } catch (err) {
-      alert(err.message)
-    } finally {
-      submitBtn.disabled = false
-      submitBtn.textContent = 'Guardar'
+      modal.style.display = 'flex'
     }
-  }
 
-  async function deleteProduct(id) {
-    if (!confirm('¿Estás seguro de que quieres eliminar este producto?')) return
-
-    try {
-      await api.products.delete(id)
-      loadProducts()
-    } catch (err) {
-      alert(err.message)
+    function closeModal() {
+      const modal = document.getElementById('product-modal')
+      if (modal) modal.style.display = 'none'
     }
-  }
 
-  function debounce(fn, delay) {
-    let timeout
-    return (...args) => {
-      clearTimeout(timeout)
-      timeout = setTimeout(() => fn(...args), delay)
+    async function handleSubmit(e) {
+      e.preventDefault()
+
+      const productId = document.getElementById('product-id').value
+      const name = document.getElementById('product-name').value
+      const description = document.getElementById('product-description').value
+      const price = parseFloat(document.getElementById('product-price').value)
+      const stock = parseInt(document.getElementById('product-stock').value) || 0
+      const categoryId = document.getElementById('product-category').value
+      const isFeatured = document.getElementById('product-featured').checked
+      const imageUrls = document.getElementById('product-image-urls').value.split('\n').filter(function(u) { return u.trim() })
+
+      const data = {
+        name: name,
+        description: description,
+        price: price,
+        stock: stock,
+        categoryId: categoryId,
+        isFeatured: isFeatured,
+        images: imageUrls.map(function(url) { return { url: url.trim() } })
+      }
+
+      try {
+        if (productId) {
+          await api.admin.updateProduct(productId, data)
+        } else {
+          await api.admin.createProduct(data)
+        }
+
+        closeModal()
+        loadProducts()
+      } catch (err) {
+        alert(err.message)
+      }
     }
-  }
 
-  init()
+    async function editProduct(id) {
+      const product = products.find(function(p) { return p.id === id })
+      if (product) {
+        openModal(product)
+      }
+    }
+
+    async function deleteProduct(id) {
+      try {
+        await api.admin.deleteProduct(id)
+        loadProducts()
+      } catch (err) {
+        alert(err.message)
+      }
+    }
+
+    function debounce(fn, delay) {
+      var timeout
+      return function() {
+        var args = arguments
+        var self = this
+        clearTimeout(timeout)
+        timeout = setTimeout(function() {
+          fn.apply(self, args)
+        }, delay)
+      }
+    }
+
+    init()
+  }
 </script>
 
 <style>

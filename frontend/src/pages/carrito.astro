@@ -140,9 +140,9 @@ import ShopLayout from '../layouts/ShopLayout.astro'
 
   // Aplicar cupón
   document.getElementById('apply-coupon-btn')?.addEventListener('click', async () => {
-    const code    = (document.getElementById('coupon-input')).value.trim()
+    const code    = (document.getElementById('coupon-input') as HTMLInputElement).value.trim()
     const msgEl   = document.getElementById('coupon-message')
-    const btnEl  = document.getElementById('apply-coupon-btn')
+    const btnEl  = document.getElementById('apply-coupon-btn') as HTMLButtonElement
     if (!code || !msgEl) return
 
     btnEl.disabled = true
@@ -173,8 +173,9 @@ import ShopLayout from '../layouts/ShopLayout.astro'
       msgEl.style.background = '#fee2e2'
       msgEl.style.color      = '#991b1b'
     } finally {
-      btnEl.disabled = false
-      btnEl.textContent = 'Aplicar'
+      const btnFinal = document.getElementById('apply-coupon-btn') as HTMLButtonElement
+      btnFinal.disabled = false
+      btnFinal.textContent = 'Aplicar'
     }
   })
 
