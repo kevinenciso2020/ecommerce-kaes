@@ -65,9 +65,9 @@ import ShopLayout from '../layouts/ShopLayout.astro'
       document.getElementById('orders-list')!.innerHTML = '<p class="empty-text">Error cargando órdenes</p>'
     })
 
-    document.getElementById('logout-btn')?.addEventListener('click', () => {
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
       const refreshToken = localStorage.getItem('refreshToken')
-      clearAuth()
+      await clearAuth()
       if (refreshToken) api.auth.logout(refreshToken).catch(() => {})
       window.location.href = '/'
     })

@@ -68,6 +68,30 @@ export const getDiscounts = async () => {
   })
 }
 
+export const getAllProducts = async ({ page = 1, limit = 20, search, category, isActive }) => {
+  const where = {}
+  if (search) where.name = { contains: search, mode: 'insensitive' }
+  if (category) where.category = { slug: category }
+  if (isActive !== undefined) where.isActive = isActive === 'true'
+
+  const skip = (page - 1) * limit
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip,
+      take:    Number(limit),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: { select: { name: true, slug: true } },
+        images:   { where: { isMain: true }, take: 1 },
+      }
+    }),
+    prisma.product.count({ where })
+  ])
+
+  return { products, total, page: Number(page), totalPages: Math.ceil(total / limit) }
+}
+
 export const getDashboardStats = async () => {
   const [totalUsers, totalProducts, totalOrders, revenue] = await Promise.all([
     prisma.user.count({ where: { role: 'CUSTOMER' } }),

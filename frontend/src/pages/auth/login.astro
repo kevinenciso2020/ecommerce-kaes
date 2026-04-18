@@ -93,7 +93,7 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
       localStorage.setItem('refreshToken', data.refreshToken)
 
       // Actualizar el store de auth
-      setAuth(data.user, data.accessToken)
+      setAuth(data.user, data.accessToken, data.refreshToken)
 
       // Redirigir según el rol
       if (data.user.role === 'ADMIN') {

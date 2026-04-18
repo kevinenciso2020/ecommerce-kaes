@@ -34,8 +34,9 @@ app.use(rateLimit({
 }))
 
 // ── Body parsing ─────────────────────────────────────────────
-// Stripe webhooks necesitan el body en raw, por eso esta ruta va antes del json parser
+// Stripe y MercadoPago webhooks necesitan el body en raw, por eso estas rutas van antes del json parser
 app.use('/api/v1/payments/webhook/stripe', express.raw({ type: 'application/json' }))
+app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '10mb' }))
 
 // ── Logs ─────────────────────────────────────────────────────

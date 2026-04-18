@@ -4,7 +4,8 @@ import express from "express";
 import crypto from "crypto";
 import { Preference, Payment } from "mercadopago";
 import mpClient from "../config/mercadopago.js";
-import { prisma } from "../config/prisma.js"; // ajusta al path real de tu prisma client
+import { prisma } from "../config/prisma.js";
+import { isAuth } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const router = express.Router();
 // POST /api/payments/create-preference
 // Crea la preferencia de pago y devuelve la URL de checkout
 // ─────────────────────────────────────────
-router.post("/create-preference", async (req, res) => {
+router.post("/create-preference", isAuth, async (req, res) => {
   try {
     const { orderId, items, payer } = req.body;
 

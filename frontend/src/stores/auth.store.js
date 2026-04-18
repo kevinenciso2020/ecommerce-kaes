@@ -15,14 +15,19 @@ if (typeof window !== 'undefined') {
   }
 }
 
-export const setAuth = (user, token) => {
+export const setAuth = async (user, token, refreshToken) => {
   currentUser.set(user)
   authToken.set(token)
   localStorage.setItem('user', JSON.stringify(user))
   localStorage.setItem('accessToken', token)
+  if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
+  const { initCart } = await import('./cart.store.js')
+  await initCart()
 }
 
-export const clearAuth = () => {
+export const clearAuth = async () => {
+  const { logoutCart } = await import('./cart.store.js')
+  logoutCart()
   currentUser.set(null)
   authToken.set(null)
   localStorage.removeItem('user')

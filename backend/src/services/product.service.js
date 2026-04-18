@@ -78,7 +78,6 @@ export const getProductBySlug = async (slug) => {
 export const createProduct = async (data, files) => {
   const slug = generateSlug(data.name)
 
-  // Verificar que el slug no exista
   const existing = await prisma.product.findUnique({ where: { slug } })
   if (existing) {
     const err = new Error('Ya existe un producto con ese nombre')
@@ -98,8 +97,32 @@ export const createProduct = async (data, files) => {
     }
   })
 
-  // Subir imágenes a Cloudinary si las hay
-  if (files && files.length > 0) {
+  // Usar URLs de Cloudinary si se proporcionan
+  let imageUrls = []
+  if (data.imageUrls) {
+    if (typeof data.imageUrls === 'string') {
+      try { imageUrls = JSON.parse(data.imageUrls) } catch { imageUrls = [data.imageUrls] }
+    } else if (Array.isArray(data.imageUrls)) {
+      imageUrls = data.imageUrls
+    }
+  }
+
+  // Usar URLs
+  if (imageUrls.length > 0) {
+    for (let i = 0; i < imageUrls.length; i++) {
+      await prisma.productImage.create({
+        data: {
+          url:       imageUrls[i],
+          publicId:  '',
+          isMain:    i === 0,
+          order:     i,
+          productId: product.id,
+        }
+      })
+    }
+  }
+  // O subir archivos a Cloudinary
+  else if (files && files.length > 0) {
     const uploadPromises = files.map((file, index) =>
       cloudinary.uploader.upload(file.path, {
         folder:         'ecommerce-ropa/products',
@@ -119,7 +142,6 @@ export const createProduct = async (data, files) => {
     await Promise.all(uploadPromises)
   }
 
-  // Crear variantes si las enviaron
   if (data.variants) {
     const variants = JSON.parse(data.variants)
     await prisma.productVariant.createMany({

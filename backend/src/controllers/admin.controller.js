@@ -1,5 +1,12 @@
 import * as AdminService from '../services/admin.service.js'
 
+export const getAllProducts = async (req, res, next) => {
+  try {
+    const result = await AdminService.getAllProducts(req.query)
+    res.json(result)
+  } catch (err) { next(err) }
+}
+
 export const getAllOrders = async (req, res, next) => {
   try {
     const result = await AdminService.getAllOrders(req.query)

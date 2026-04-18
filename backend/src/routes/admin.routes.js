@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
-import { getAllOrders, updateOrderStatus, createDiscount, createCoupon, getCoupons, getDiscounts, getDashboardStats } from '../controllers/admin.controller.js'
+import { getAllProducts, getAllOrders, updateOrderStatus, createDiscount, createCoupon, getCoupons, getDiscounts, getDashboardStats } from '../controllers/admin.controller.js'
 import { isAuth, isAdmin } from '../middleware/auth.middleware.js'
 
 const router = Router()
@@ -26,6 +26,7 @@ const adminActionLogger = (req, res, next) => {
 router.use(adminRateLimiter, isAuth, isAdmin, adminActionLogger)
 
 router.get('/stats',              getDashboardStats)
+router.get('/products',           getAllProducts)
 router.get('/orders',             getAllOrders)
 router.put('/orders/:id/status',  updateOrderStatus)
 router.get('/discounts',          getDiscounts)

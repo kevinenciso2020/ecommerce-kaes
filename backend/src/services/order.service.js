@@ -1,6 +1,6 @@
 import { prisma } from '../config/prisma.js'
 
-export const createOrder = async (userId, { items, couponCode, shippingAddressId, notes }) => {
+export const createOrder = async (userId, { items, couponCode, shippingAddressId, notes, address }) => {
   // Calcular el total verificando precios desde la DB (nunca confiar en el cliente)
   let subtotal = 0
   const orderItems = []
@@ -32,6 +32,23 @@ export const createOrder = async (userId, { items, couponCode, shippingAddressId
 
   // Crear la orden y sus items en una sola transacción
   const order = await prisma.$transaction(async (tx) => {
+    let finalShippingAddressId = shippingAddressId
+
+    // Si se proporciona dirección, crearla
+    if (address && !shippingAddressId) {
+      const newAddress = await tx.address.create({
+        data: {
+          userId,
+          street: address.street,
+          city: address.city,
+          department: address.department,
+          fullName: address.fullName,
+          phone: address.phone,
+        }
+      })
+      finalShippingAddressId = newAddress.id
+    }
+
     const newOrder = await tx.order.create({
       data: {
         userId,
@@ -39,7 +56,7 @@ export const createOrder = async (userId, { items, couponCode, shippingAddressId
         discount,
         total,
         couponCode,
-        shippingAddressId,
+        shippingAddressId: finalShippingAddressId,
         notes,
         items: { create: orderItems }
       },

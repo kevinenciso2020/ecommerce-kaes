@@ -36,3 +36,36 @@ npm run preview    # Preview build
 - **Frontend Node.js requirement**: `node >= 22.12.0` in engines
 - **No test suite** - no test scripts or test directory found
 - **No lint/typecheck** - no ESLint, Prettier, or TypeScript checking configured
+
+## Deployment
+
+### Frontend (Vercel)
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com) and import the repository
+3. Select "frontend" as the directory
+4. Build command: `npm run build`
+5. Output directory: `dist`
+6. Add environment variable: `VITE_API_URL=https://your-backend-url.com`
+7. Deploy
+
+### Backend (Railway/Render)
+1. Push your code to GitHub
+2. Create a new project on Railway or Render
+3. Connect your GitHub repository, select the "backend" folder
+4. Add all environment variables from `backend/.env`:
+   - `PORT` ( Railway will set this automatically)
+   - `NODE_ENV=production`
+   - `DATABASE_URL` (Neon URL)
+   - `JWT_SECRET`
+   - `JWT_REFRESH_SECRET`
+   - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+   - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+   - `MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `MP_PUBLIC_KEY`
+   - `FRONTEND_URL` (your Vercel URL)
+   - `BACKEND_URL` (your Railway/Render URL)
+5. Run Prisma migration: Add a "migrate" command in the deployment settings or manually run `npx prisma migrate deploy`
+6. Deploy
+
+### Important
+- After deploying backend, update `FRONTEND_URL` in backend env to your Vercel URL
+- After deploying backend, update `VITE_API_URL` in Vercel to your backend URL
