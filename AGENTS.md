@@ -30,10 +30,11 @@ npm run preview    # Preview build
 ## Important Quirks
 
 - **Backend is JavaScript (not TypeScript)** - uses `.js` files, no compilation step despite tsconfig.json `"module": "commonjs"`
-- **Database .env file exists** at `backend/.env` - copy to `backend/.env` if missing, contains required secrets
+- **Database .env file** at `backend/.env` - contains required secrets (already exists)
 - **Two payment providers**: Stripe and MercadoPago configured
 - **File uploads**: multer + Cloudinary for image handling
 - **Frontend Node.js requirement**: `node >= 22.12.0` in engines
+- **Shared package** only contains `shared/types/` - TypeScript interfaces
 - **No test suite** - no test scripts or test directory found
 - **No lint/typecheck** - no ESLint, Prettier, or TypeScript checking configured
 
@@ -53,7 +54,7 @@ npm run preview    # Preview build
 2. Create a new project on Railway or Render
 3. Connect your GitHub repository, select the "backend" folder
 4. Add all environment variables from `backend/.env`:
-   - `PORT` ( Railway will set this automatically)
+   - `PORT` (Railway will set this automatically)
    - `NODE_ENV=production`
    - `DATABASE_URL` (Neon URL)
    - `JWT_SECRET`

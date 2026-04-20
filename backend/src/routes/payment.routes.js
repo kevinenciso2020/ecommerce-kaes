@@ -4,6 +4,7 @@ import express from "express";
 import crypto from "crypto";
 import { Preference, Payment } from "mercadopago";
 import mpClient from "../config/mercadopago.js";
+import wompi from "../config/wompi.js";
 import { prisma } from "../config/prisma.js";
 import { isAuth } from "../middleware/auth.middleware.js";
 
@@ -242,5 +243,156 @@ router.get("/status/:orderId", async (req, res) => {
     return res.status(500).json({ error: "Error consultando el pago" });
   }
 });
+
+// ─────────────────────────────────────────
+// POST /api/payments/wompi/create-checkout
+// Crea una transacción en Wompi y devuelve la URL de pago
+// ─────────────────────────────────────────
+router.post("/wompi/create-checkout", isAuth, async (req, res) => {
+  try {
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ error: "orderId requerido" });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { user: true, items: { include: { product: true } } },
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: "Orden no encontrada" });
+    }
+
+    if (order.status !== "PENDING") {
+      return res.status(400).json({ error: "Esta orden ya fue procesada" });
+    }
+
+    const acceptanceData = await wompi.getPresignedAcceptance();
+
+    const amountInCents = Math.round(Number(order.total) * 100)
+    const reference = `ORDER-${order.id}`
+    const redirectUrl = `${process.env.FRONTEND_URL}/checkout/wompi-callback?orderId=${order.id}`
+
+    const clientIp = req.ip || req.connection.remoteAddress || '127.0.0.1'
+    const cleanedIp = clientIp.replace(/^::ffff:/, '')
+
+    const transaction = await wompi.createTransaction({
+      amountInCents,
+      currency: 'COP',
+      customerEmail: order.user.email,
+      reference,
+      acceptanceToken: acceptanceData.acceptance_token,
+      acceptPersonalAuth: acceptanceData.accept_personal_auth,
+      paymentMethod: { type: 'CARD' },
+      paymentMethodType: 'CARD',
+      redirectUrl,
+      ip: cleanedIp,
+    })
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { mpPreferenceId: transaction.id },
+    })
+
+    return res.json({
+      transactionId: transaction.id,
+      paymentLink: transaction.redirect_url,
+    })
+  } catch (error) {
+    console.error("Error creando checkout Wompi:", error)
+    return res.status(500).json({ error: "Error al crear el pago" })
+  }
+})
+
+// ─────────────────────────────────────────
+// POST /api/payments/wompi/webhook
+// Wompi notifica aquí el resultado del pago
+// ─────────────────────────────────────────
+router.post("/wompi/webhook", express.raw({ type: "application/json" }), async (req, res) => {
+  try {
+    const event = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+
+    if (event.event !== "transaction.updated") {
+      return res.sendStatus(200)
+    }
+
+    const transaction = event.data.object
+    const transactionId = transaction.id
+    const status = transaction.status
+
+    const reference = transaction.reference
+    const orderId = reference.replace('ORDER-', '')
+
+    let newOrderStatus
+    let paymentStatus
+
+    switch (status) {
+      case "APPROVED":
+        newOrderStatus = "CONFIRMED"
+        paymentStatus = "COMPLETED"
+        break
+      case "DECLINED":
+        newOrderStatus = "CANCELLED"
+        paymentStatus = "FAILED"
+        break
+      case "PENDING":
+      case "PROCESSING":
+        newOrderStatus = "PENDING"
+        paymentStatus = "PENDING"
+        break
+      default:
+        newOrderStatus = "PENDING"
+        paymentStatus = "PENDING"
+    }
+
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: newOrderStatus,
+        paidAt: status === "APPROVED" ? new Date() : null,
+      },
+    })
+
+    await prisma.payment.upsert({
+      where: { orderId: orderId },
+      create: {
+        orderId: orderId,
+        provider: "WOMPI",
+        providerPaymentId: transactionId,
+        status: paymentStatus,
+        amount: transaction.amount_in_cents / 100,
+        currency: transaction.currency || "COP",
+      },
+      update: {
+        providerPaymentId: transactionId,
+        status: paymentStatus,
+        amount: transaction.amount_in_cents / 100,
+      },
+    })
+
+    console.log(`✅ Orden ${orderId} actualizada a ${newOrderStatus} (Wompi: ${transactionId})`)
+
+    return res.sendStatus(200)
+  } catch (error) {
+    console.error("Error procesando webhook Wompi:", error)
+    return res.sendStatus(200)
+  }
+})
+
+// ─────────────────────────────────────────
+// GET /api/payments/wompi/acceptance-token
+// Devuelve el token de aceptación para el frontend (Widget)
+// ─────────────────────────────────────────
+router.get("/wompi/acceptance-token", async (req, res) => {
+  try {
+    const acceptanceData = await wompi.getPresignedAcceptance()
+    return res.json(acceptanceData)
+  } catch (error) {
+    console.error("Error obteniendo acceptance token:", error)
+    return res.status(500).json({ error: "Error obteniendo token" })
+  }
+})
 
 export default router;

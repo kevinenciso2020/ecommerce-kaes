@@ -131,6 +131,10 @@ admin: {
   payments: {
     createPreference: (data) => request('/payments/create-preference', { method: 'POST', body: JSON.stringify(data) }),
     getStatus: (orderId) => request(`/payments/status/${orderId}`),
+    wompi: {
+      createCheckout: (orderId) => request('/payments/wompi/create-checkout', { method: 'POST', body: JSON.stringify({ orderId }) }),
+      getAcceptanceToken: () => request('/payments/wompi/acceptance-token'),
+    },
   },
   coupons: {
     validate: (code, subtotal = 0) => request(`/coupons/${code}?subtotal=${subtotal}`),
