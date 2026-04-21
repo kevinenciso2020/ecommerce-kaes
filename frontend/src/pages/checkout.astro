@@ -159,27 +159,32 @@ import '../styles/checkout.css'
       return
     }
 
-    const fullNameInput   = document.getElementById('full-name')
-    const streetInput     = document.getElementById('street')
-    const cityInput       = document.getElementById('city')
-    const departmentInput = document.getElementById('department')
+    const fullNameInput   = document.getElementById('full-name') as HTMLInputElement | null
+    const streetInput     = document.getElementById('street') as HTMLInputElement | null
+    const cityInput       = document.getElementById('city') as HTMLInputElement | null
+    const departmentInput = document.getElementById('department') as HTMLInputElement | null
 
-    const errorEl = document.getElementById('checkout-error')
-    const btn     = document.getElementById('place-order-btn')
+    const errorEl = document.getElementById('checkout-error') as HTMLElement | null
+    const btn     = document.getElementById('place-order-btn') as HTMLButtonElement | null
 
-    const fullName   = fullNameInput?.value.trim()
-    const street     = streetInput?.value.trim()
-    const city       = cityInput?.value.trim()
-    const department = departmentInput?.value.trim()
+    const fullName   = fullNameInput?.value.trim() || ''
+    const street     = streetInput?.value.trim() || ''
+    const city       = cityInput?.value.trim() || ''
+    const department = departmentInput?.value.trim() || ''
 
     if (!fullName || !street || !city || !department) {
-      errorEl.textContent   = 'Por favor completa todos los campos'
-      errorEl.style.display = 'block'
+      if (errorEl) {
+        errorEl.textContent   = 'Por favor completa todos los campos'
+        errorEl.style.display = 'block'
+      }
       return
     }
 
-    const paymentMethod = document.querySelector('input[name="payment"]:checked')?.value || 'wompi'
+    const paymentMethod = (document.querySelector('input[name="payment"]:checked') as HTMLInputElement | null)?.value || 'wompi'
 
+    if (!btn) {
+      return
+    }
     btn.disabled    = true
     btn.textContent = 'Procesando...'
     errorEl.style.display = 'none'
@@ -224,10 +229,14 @@ import '../styles/checkout.css'
       }
 
     } catch (err) {
-      errorEl.textContent   = err.message || 'Error al procesar el pedido'
-      errorEl.style.display = 'block'
-      btn.disabled    = false
-      btn.textContent = 'Confirmar pedido'
+      if (errorEl) {
+        errorEl.textContent   = err.message || 'Error al procesar el pedido'
+        errorEl.style.display = 'block'
+      }
+      if (btn) {
+        btn.disabled    = false
+        btn.textContent = 'Confirmar pedido'
+      }
     }
   })
 </script>

@@ -83,7 +83,7 @@ export const api = {
     login:    (data) => request('/auth/login',    { method: 'POST', body: JSON.stringify(data) }),
     register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
     me:       ()     => request('/auth/me'),
-    logout:   ()     => request('/auth/logout',  { method: 'POST' }),
+    logout:   (refreshToken) => request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }),
   },
   products: {
     list:   (params = {}) => request(`/products?${new URLSearchParams(params)}`),
