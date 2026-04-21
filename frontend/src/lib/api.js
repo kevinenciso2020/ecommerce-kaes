@@ -12,45 +12,37 @@ const onTokenRefreshed = (newToken) => {
   refreshSubscribers = []
 }
 
-const getRefreshToken = () => 
-  typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null
-
 const refreshAccessToken = async () => {
-  const refreshToken = getRefreshToken()
-  if (!refreshToken) throw new Error('No refresh token')
-
   const res = await fetch(`${BASE_URL}/auth/refresh`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
   })
 
   if (!res.ok) {
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    localStorage.removeItem('user')
+    clearAuthData()
     window.location.href = '/auth/login'
     throw new Error('Session expired')
   }
 
   const data = await res.json()
-  localStorage.setItem('accessToken', data.accessToken)
-  localStorage.setItem('refreshToken', data.refreshToken)
   onTokenRefreshed(data.accessToken)
   return data.accessToken
 }
 
-const request = async (endpoint, options = {}) => {
-  const token = typeof window !== 'undefined'
-    ? localStorage.getItem('accessToken')
-    : null
+const clearAuthData = () => {
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+  localStorage.removeItem('user')
+}
 
+const request = async (endpoint, options = {}) => {
   const isFormData = options.body instanceof FormData
 
   const config = {
+    credentials: 'include',
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,
@@ -62,8 +54,7 @@ const request = async (endpoint, options = {}) => {
     if (!isRefreshing) {
       isRefreshing = true
       try {
-        const newToken = await refreshAccessToken()
-        config.headers.Authorization = `Bearer ${newToken}`
+        await refreshAccessToken()
         res = await fetch(`${BASE_URL}${endpoint}`, config)
       } catch (err) {
         isRefreshing = false
@@ -72,8 +63,7 @@ const request = async (endpoint, options = {}) => {
       isRefreshing = false
     } else {
       return new Promise((resolve) => {
-        subscribeTokenRefresh((newToken) => {
-          config.headers.Authorization = `Bearer ${newToken}`
+        subscribeTokenRefresh(() => {
           resolve(fetch(`${BASE_URL}${endpoint}`, config).then(r => r.json()))
         })
       })
@@ -93,7 +83,7 @@ export const api = {
     login:    (data) => request('/auth/login',    { method: 'POST', body: JSON.stringify(data) }),
     register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
     me:       ()     => request('/auth/me'),
-    logout:   (refreshToken) => request('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) }),
+    logout:   ()     => request('/auth/logout',  { method: 'POST' }),
   },
   products: {
     list:   (params = {}) => request(`/products?${new URLSearchParams(params)}`),
@@ -118,7 +108,7 @@ export const api = {
     list:   ()     => request('/orders'),
     detail: (id)   => request(`/orders/${id}`),
   },
-admin: {
+  admin: {
     stats:          ()            => request('/admin/stats'),
     products:      (params = {}) => request(`/admin/products?${new URLSearchParams(params)}`),
     orders:         (params = {}) => request(`/admin/orders?${new URLSearchParams(params)}`),

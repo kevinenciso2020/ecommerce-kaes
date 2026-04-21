@@ -90,18 +90,10 @@ import '../../styles/auth.css'
     try {
       const data = await api.auth.login({ email, password })
 
-      // Guardar tokens en localStorage
-      localStorage.setItem('refreshToken', data.refreshToken)
+      setAuth(data.user, data.accessToken || '')
 
-      // Actualizar el store de auth
-      setAuth(data.user, data.accessToken)
-
-      // Redirigir según el rol
-      if (data.user.role === 'ADMIN') {
-        window.location.href = '/admin'
-      } else {
-        window.location.href = '/'
-      }
+      const redirectUrl = data.user.role === 'ADMIN' ? '/admin' : '/perfil'
+      window.location.href = redirectUrl
     } catch (err: any) {
       showError(err.message || 'Error al iniciar sesión')
     } finally {

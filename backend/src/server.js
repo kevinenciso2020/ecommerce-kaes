@@ -4,6 +4,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import morgan from 'morgan'
 import rateLimit from 'express-rate-limit'
+import cookieParser from 'cookie-parser'
 
 import { errorHandler } from './middleware/error.middleware.js'
 
@@ -32,6 +33,9 @@ app.use(rateLimit({
   max:      100,
   message:  { error: 'Demasiadas peticiones, intenta más tarde' },
 }))
+
+// ── Cookies ────────────────────────────────────────────────
+app.use(cookieParser())
 
 // ── Body parsing ─────────────────────────────────────────────
 // Stripe, MercadoPago y Wompi webhooks necesitan el body en raw, por eso estas rutas van antes del json parser

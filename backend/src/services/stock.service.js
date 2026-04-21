@@ -1,0 +1,141 @@
+import { prisma } from '../config/prisma.js'
+
+export const validateStock = async (orderId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: {
+        include: { product: true }
+      }
+    }
+  })
+
+  if (!order) {
+    throw Object.assign(new Error('Orden no encontrada'), { status: 404 })
+  }
+
+  const insufficientStock = []
+
+  for (const item of order.items) {
+    const product = item.product
+    let availableStock = product.stock
+    let variantInfo = null
+
+    if (item.size && item.color) {
+      const variant = await prisma.productVariant.findFirst({
+        where: {
+          productId: item.productId,
+          size: item.size,
+          color: item.color
+        }
+      })
+
+      if (variant) {
+        availableStock = variant.stock
+        variantInfo = `variante(${item.size}/${item.color})`
+      }
+    }
+
+    if (availableStock < item.quantity) {
+      insufficientStock.push({
+        productId: item.productId,
+        productName: product.name,
+        requested: item.quantity,
+        available: availableStock,
+        variant: variantInfo
+      })
+    }
+  }
+
+  if (insufficientStock.length > 0) {
+    const messages = insufficientStock.map(
+      s => `${s.productName} ${s.variant || ''}: solicitado ${s.requested}, disponible ${s.available}`
+    ).join('; ')
+
+    throw Object.assign(new Error(`Stock insuficiente: ${messages}`), {
+      status: 400,
+      code: 'INSUFFICIENT_STOCK',
+      details: insufficientStock
+    })
+  }
+
+  return { valid: true, order }
+}
+
+export const discountStock = async (orderId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true }
+  })
+
+  if (!order) {
+    throw Object.assign(new Error('Orden no encontrada'), { status: 404 })
+  }
+
+  await prisma.$transaction(async (tx) => {
+    for (const item of order.items) {
+      if (item.size && item.color) {
+        const variant = await tx.productVariant.findFirst({
+          where: {
+            productId: item.productId,
+            size: item.size,
+            color: item.color
+          }
+        })
+
+        if (variant && variant.stock >= item.quantity) {
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: { stock: { decrement: item.quantity } }
+          })
+        }
+      }
+
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: { decrement: item.quantity } }
+      })
+    }
+
+    console.log(`✅ Stock descontado para orden ${orderId}`)
+  })
+}
+
+export const restoreStock = async (orderId) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true }
+  })
+
+  if (!order) {
+    return
+  }
+
+  await prisma.$transaction(async (tx) => {
+    for (const item of order.items) {
+      if (item.size && item.color) {
+        const variant = await tx.productVariant.findFirst({
+          where: {
+            productId: item.productId,
+            size: item.size,
+            color: item.color
+          }
+        })
+
+        if (variant) {
+          await tx.productVariant.update({
+            where: { id: variant.id },
+            data: { stock: { increment: item.quantity } }
+          })
+        }
+      }
+
+      await tx.product.update({
+        where: { id: item.productId },
+        data: { stock: { increment: item.quantity } }
+      })
+    }
+
+    console.log(`✅ Stock restaurado para orden ${orderId}`)
+  })
+}

@@ -49,8 +49,11 @@
     const section = document.getElementById('auth-section')
     if (!section) return
     if (user) {
+      // Si es ADMIN, mostrar enlace al panel de admin, si no, perfil
+      const profileLink = user.role === 'ADMIN' ? '/admin' : '/perfil'
+      const displayName = user.role === 'ADMIN' ? 'Admin' : user.name.split(' ')[0]
       section.innerHTML = `
-        <a href="/perfil" class="nav-link">${user.name.split(' ')[0]}</a>
+        <a href="${profileLink}" class="nav-link">${displayName}</a>
       `
     } else {
       section.innerHTML = `

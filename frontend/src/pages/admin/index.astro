@@ -63,10 +63,31 @@ import '../../styles/admin.css'
   import { currentUser } from '../../stores/auth.store.js'
   import { api } from '../../lib/api.js'
 
-  const user = currentUser.get()
+  //Durante el SSR, currentUser.get() siempre retorna null porque no hay acceso a localStorage
+  //Por eso necesitamos verificar directamente localStorage desde el cliente
+  const initAuth = () => {
+    const savedUser = localStorage.getItem('user')
+    const savedToken = localStorage.getItem('accessToken')
+    if (savedUser && savedToken) {
+      try {
+        const user = JSON.parse(savedUser)
+        currentUser.set(user)
+        return user
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+
+  const user = initAuth()
 
   if (!user || user.role !== 'ADMIN') {
-    document.getElementById('no-access')!.style.display  = 'flex'
+    //Si existe un usuario pero no es admin, mostrar mensaje de acceso denegado
+    //Si no existe usuario, simplemente no mostrar el admin
+    if (user) {
+      document.getElementById('no-access')!.style.display = 'flex'
+    }
   } else {
     document.getElementById('admin-content')!.style.display = 'block'
 
