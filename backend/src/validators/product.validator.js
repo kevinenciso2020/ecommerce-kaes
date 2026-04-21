@@ -68,7 +68,7 @@ export const createProduct = [
     .isInt({ min: 0 }).withMessage('El stock debe ser un número entero positivo'),
   body('categoryId')
     .notEmpty().withMessage('La categoría es requerida')
-    .isInt({ min: 1 }).withMessage('El ID de categoría debe ser válido'),
+    .isString().withMessage('El ID de categoría debe ser válido'),
   body('isFeatured')
     .optional()
     .isBoolean().withMessage('isFeatured debe ser un valor booleano'),
@@ -83,7 +83,7 @@ export const createProduct = [
 export const updateProduct = [
   param('id')
     .notEmpty().withMessage('El ID del producto es requerido')
-    .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo'),
+    .isString().withMessage('El ID debe ser un texto válido'),
   body('name')
     .optional()
     .trim()
@@ -102,7 +102,7 @@ export const updateProduct = [
     .isInt({ min: 0 }).withMessage('El stock debe ser un número entero positivo'),
   body('categoryId')
     .optional()
-    .isInt({ min: 1 }).withMessage('El ID de categoría debe ser válido'),
+    .isString().withMessage('El ID de categoría debe ser válido'),
   body('isActive')
     .optional()
     .isBoolean().withMessage('isActive debe ser un valor booleano'),
@@ -114,7 +114,7 @@ export const updateProduct = [
 export const deleteProduct = [
   param('id')
     .notEmpty().withMessage('El ID del producto es requerido')
-    .isInt({ min: 1 }).withMessage('El ID debe ser un número entero positivo')
+    .isString().withMessage('El ID debe ser un texto válido')
 ]
 
 export const createCategory = [

@@ -2,6 +2,8 @@ import { Router } from 'express'
 import multer from 'multer'
 import { getProducts, getProductBySlug, createProduct, updateProduct, deleteProduct, getCategories, createCategory } from '../controllers/product.controller.js'
 import { isAuth, isAdmin } from '../middleware/auth.middleware.js'
+import { validate } from '../middleware/validate.js'
+import { createProduct as createProductValidator, updateProduct as updateProductValidator, deleteProduct as deleteProductValidator, createCategory as createCategoryValidator } from '../validators/product.validator.js'
 
 const router = Router()
 
@@ -14,9 +16,9 @@ router.get('/categories',    getCategories)
 router.get('/:slug',         getProductBySlug)
 
 // Rutas protegidas — solo admin
-router.post('/',             isAuth, isAdmin, upload.array('images', 10), createProduct)
-router.put('/:id',           isAuth, isAdmin, upload.array('images', 10), updateProduct)
-router.delete('/:id',        isAuth, isAdmin, deleteProduct)
-router.post('/categories',   isAuth, isAdmin, createCategory)
+router.post('/',             createProductValidator, validate, isAuth, isAdmin, upload.array('images', 10), createProduct)
+router.put('/:id',           updateProductValidator, validate, isAuth, isAdmin, upload.array('images', 10), updateProduct)
+router.delete('/:id',        deleteProductValidator, validate, isAuth, isAdmin, deleteProduct)
+router.post('/categories',   createCategoryValidator, validate, isAuth, isAdmin, createCategory)
 
 export default router

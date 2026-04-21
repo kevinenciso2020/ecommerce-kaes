@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro'
 import Header from '../components/ui/Header.astro'
 import Footer from '../components/ui/Footer.astro'
+import '../styles/components.css'
 
 interface Props {
   title:       string
@@ -18,10 +19,3 @@ const { title, description } = Astro.props
   </main>
   <Footer />
 </BaseLayout>
-
-<style>
-  .main-content {
-    min-height: calc(100vh - var(--header-height) - 200px);
-    padding-top: var(--header-height);
-  }
-</style>

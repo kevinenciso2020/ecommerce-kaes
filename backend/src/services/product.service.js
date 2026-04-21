@@ -174,8 +174,32 @@ export const updateProduct = async (id, data, files) => {
 
   await prisma.product.update({ where: { id }, data: updateData })
 
-  // Subir nuevas imágenes si las enviaron
-  if (files && files.length > 0) {
+  // Usar URLs de Cloudinary si se proporcionan
+  let imageUrls = []
+  if (data.imageUrls) {
+    if (typeof data.imageUrls === 'string') {
+      try { imageUrls = JSON.parse(data.imageUrls) } catch { imageUrls = [data.imageUrls] }
+    } else if (Array.isArray(data.imageUrls)) {
+      imageUrls = data.imageUrls
+    }
+  }
+
+  // Guardar URLs directamente
+  if (imageUrls.length > 0) {
+    for (let i = 0; i < imageUrls.length; i++) {
+      await prisma.productImage.create({
+        data: {
+          url:       imageUrls[i],
+          publicId:  '',
+          isMain:    false,
+          order:    i,
+          productId: id,
+        }
+      })
+    }
+  }
+  // O subir archivos a Cloudinary
+  else if (files && files.length > 0) {
     const uploadPromises = files.map((file, index) =>
       cloudinary.uploader.upload(file.path, {
         folder:         'ecommerce-ropa/products',

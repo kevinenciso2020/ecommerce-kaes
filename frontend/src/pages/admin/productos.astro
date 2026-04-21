@@ -332,21 +332,22 @@ import '../../styles/admin.css'
       const isFeatured = document.getElementById('product-featured').checked
       const imageUrls = document.getElementById('product-image-urls').value.split('\n').filter(function(u) { return u.trim() })
 
-      const data = {
-        name: name,
-        description: description,
-        price: price,
-        stock: stock,
-        categoryId: categoryId,
-        isFeatured: isFeatured,
-        images: imageUrls.map(function(url) { return { url: url.trim() } })
+      const formData = new FormData()
+      formData.append('name', name)
+      formData.append('description', description)
+      formData.append('price', price.toString())
+      formData.append('stock', stock.toString())
+      formData.append('categoryId', categoryId)
+      formData.append('isFeatured', isFeatured.toString())
+      if (imageUrls.length > 0) {
+        formData.append('imageUrls', JSON.stringify(imageUrls.map(function(url) { return url.trim() })))
       }
 
       try {
         if (productId) {
-          await api.admin.updateProduct(productId, data)
+          await api.products.update(productId, formData)
         } else {
-          await api.admin.createProduct(data)
+          await api.products.create(formData)
         }
 
         closeModal()
@@ -365,7 +366,7 @@ import '../../styles/admin.css'
 
     async function deleteProduct(id) {
       try {
-        await api.admin.deleteProduct(id)
+        await api.products.delete(id)
         loadProducts()
       } catch (err) {
         alert(err.message)
