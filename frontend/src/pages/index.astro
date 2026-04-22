@@ -1,5 +1,6 @@
 ---
 import ShopLayout from '../layouts/ShopLayout.astro'
+import TrinityLogo from '../components/ui/TrinityLogo.astro'
 import '../styles/index.css'
 
 let featuredProducts: any[] = []
@@ -31,13 +32,7 @@ try {
 
   <section class="hero">
     <div class="hero-content">
-      <p class="hero-eyebrow">Nueva colección 2025</p>
-      <h1 class="hero-title">Moda que<br/><em>te define</em></h1>
-      <p class="hero-subtitle">Prendas de calidad con estilo único para cada ocasión</p>
-      <div class="hero-actions">
-        <a href="/productos" class="btn btn-primary">Ver colección</a>
-        <a href="/productos?featured=true" class="btn btn-outline">Destacados</a>
-      </div>
+      <TrinityLogo />
     </div>
   </section>
 
