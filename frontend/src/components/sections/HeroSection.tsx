@@ -11,59 +11,52 @@ const fadeSlideUp = {
   }),
 };
 
-const drawAnimation = {
-  hidden: { pathLength: 0, opacity: 0 },
-  visible: (i: number) => ({
+// Nueva animación para el trazo infinito en rojo
+const drawInfinite = {
+  hidden: { pathLength: 0, pathOffset: 1, opacity: 0 },
+  visible: {
     pathLength: 1,
+    pathOffset: 0,
     opacity: 1,
     transition: {
-      pathLength: { delay: i * 0.3, type: "spring", duration: 2, bounce: 0 },
-      opacity: { delay: i * 0.3, duration: 0.1 },
+      pathLength: { duration: 2, ease: "easeInOut" },
+      pathOffset: { 
+        duration: 4, 
+        ease: "linear", 
+        repeat: Infinity 
+      },
+      opacity: { duration: 0.5 }
     },
-  }),
+  },
 };
 
 export default function HeroSection() {
   return (
-    <section className="hero-section">
+    <section className="hero-section" style={{ background: "transparent", overflow: "hidden" }}>
       <div className="hero-bg-pattern" aria-hidden="true" />
 
       <div className="hero-inner container">
         <div className="hero-left">
           <div className="hero-symbol-wrapper">
-            <svg className="hero-symbol" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="var(--color-gray-800)" />
-                  <stop offset="100%" stopColor="var(--color-gray-600)" />
-                </linearGradient>
-              </defs>
-
-              <motion.g
-                className="hero-knot"
+            {/* Ajustamos el viewBox para que el nuevo path quepa perfectamente */}
+            <svg 
+              className="hero-symbol" 
+              viewBox="0 0 950 850" 
+              xmlns="http://www.w3.org/2000/svg"
+              style={{ maxHeight: "80vh", filter: "drop-shadow(0 0 10px rgba(255, 0, 0, 0.3))" }}
+            >
+              <motion.path
+                d="M 433 0 A 440 440 90 0 0 866 750 A 440 440 90 0 0 0 750 A 440 440 90 0 0 433 0 Z"
+                transform="translate(40 40)"
+                fill="none"
+                stroke="#ff0000" // Color Rojo
+                strokeWidth="35"
+                strokeLinecap="round"
+                strokeDasharray="40 60"
+                variants={drawInfinite}
                 initial="hidden"
                 animate="visible"
-                custom={0}
-                variants={drawAnimation}
-              >
-                <circle cx="100" cy="55" r="35" fill="none" stroke="url(#heroGradient)" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="155" cy="127" r="35" fill="none" stroke="url(#heroGradient)" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="45" cy="127" r="35" fill="none" stroke="url(#heroGradient)" strokeWidth="2.5" strokeLinecap="round" />
-                <circle cx="100" cy="55" r="12" fill="url(#heroGradient)" />
-                <circle cx="155" cy="127" r="12" fill="url(#heroGradient)" />
-                <circle cx="45" cy="127" r="12" fill="url(#heroGradient)" />
-                <circle cx="100" cy="100" r="8" fill="url(#heroGradient)" className="hero-center-dot" />
-              </motion.g>
-
-              <motion.g
-                className="hero-ring"
-                initial="hidden"
-                animate="visible"
-                custom={1}
-                variants={drawAnimation}
-              >
-                <circle cx="100" cy="100" r="55" fill="none" stroke="var(--color-accent)" strokeWidth="1" strokeDasharray="4 6" opacity="0.5" />
-              </motion.g>
+              />
             </svg>
           </div>
         </div>
@@ -86,7 +79,7 @@ export default function HeroSection() {
             animate="visible"
             variants={fadeSlideUp}
           >
-            <span className="hero-title-kaes">kaes</span>
+            <span className="hero-title-kaes" style={{ color: "#ff0000" }}>kaes</span>
           </motion.h1>
 
           <motion.p
@@ -119,8 +112,9 @@ export default function HeroSection() {
             <MagneticButton
               onClick={() => window.location.href = "/productos"}
               className="btn btn-primary hero-btn-primary"
+              style={{ backgroundColor: "#ff0000", borderColor: "#ff0000" }}
             >
-              Explorar colecci&oacute;n
+              Explorar colección
             </MagneticButton>
             <a href="/auth/register" className="btn btn-outline hero-btn-outline">
               Crear cuenta
