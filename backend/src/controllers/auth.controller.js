@@ -65,7 +65,7 @@ export const refresh = async (req, res, next) => {
 
     const result = await AuthService.refreshAccessToken(refreshToken)
     setAuthCookies(res, result.accessToken, result.refreshToken)
-    res.json({ user: result.user })
+    res.json({ user: result.user, accessToken: result.accessToken })
   } catch (err) {
     next(err)
   }

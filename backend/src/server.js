@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit'
 import cookieParser from 'cookie-parser'
 
 import { errorHandler } from './middleware/error.middleware.js'
+import { prisma } from './config/prisma.js'
 
 import authRoutes     from './routes/auth.routes.js'
 import productRoutes  from './routes/product.routes.js'
@@ -22,10 +23,22 @@ const PORT = process.env.PORT || 3000
 // ── Seguridad ────────────────────────────────────────────────
 app.use(helmet())
 
-app.use(cors({
-  origin:      process.env.FRONTEND_URL || 'http://localhost:4321',
+const corsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      'http://localhost:4321',
+      'http://127.0.0.1:4321',
+    ]
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
   credentials: true,
-}))
+}
+app.use(cors(corsOptions))
 
 // Rate limiting global — máximo 100 peticiones por 15 minutos por IP
 app.use(rateLimit({
@@ -43,6 +56,7 @@ app.use('/api/v1/payments/webhook/stripe', express.raw({ type: 'application/json
 app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }))
 app.use('/api/v1/payments/wompi/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '10mb' }))
+app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 
 // ── Logs ─────────────────────────────────────────────────────
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'))
@@ -56,9 +70,14 @@ app.use('/api/v1/admin',    adminRoutes)
 app.use('/api/v1/cart',     cartRoutes)
 app.use('/api/v1/coupons',  couponRoutes)
 
-// Health check — para verificar que el servidor está vivo
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', env: process.env.NODE_ENV })
+// Health checks — verificar que el servidor y la DB están vivos
+app.get('/api/health', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`
+    res.json({ status: 'ok', db: 'connected', env: process.env.NODE_ENV })
+  } catch (err) {
+    res.status(503).json({ status: 'error', db: 'disconnected', error: err.message })
+  }
 })
 
 // ── Error handler global (siempre al final) ───────────────────

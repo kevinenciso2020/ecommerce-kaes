@@ -1,4 +1,5 @@
 const BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api/v1'
+const FRONTEND_URL = import.meta.env.PUBLIC_FRONTEND_URL || 'http://localhost:4321'
 
 let isRefreshing = false
 let refreshSubscribers = []
@@ -39,10 +40,16 @@ const clearAuthData = () => {
 const request = async (endpoint, options = {}) => {
   const isFormData = options.body instanceof FormData
 
+  let token = null
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('accessToken')
+  }
+
   const config = {
     credentials: 'include',
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,

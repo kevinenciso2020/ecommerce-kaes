@@ -286,6 +286,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background: var(--color-gray-200);
   color: var(--color-gray-400);
 }
 

@@ -74,7 +74,7 @@ export const createProduct = [
     .isBoolean().withMessage('isFeatured debe ser un valor booleano'),
   body('imageUrls')
     .optional()
-    .isArray().withMessage('Las URLs de imagen deben ser un array'),
+    .isString().withMessage('Las URLs de imagen deben ser un string JSON serializado'),
   body('variants')
     .optional()
     .isArray().withMessage('Las variantes deben ser un array')
@@ -108,7 +108,13 @@ export const updateProduct = [
     .isBoolean().withMessage('isActive debe ser un valor booleano'),
   body('isFeatured')
     .optional()
-    .isBoolean().withMessage('isFeatured debe ser un valor booleano')
+    .isBoolean().withMessage('isFeatured debe ser un valor booleano'),
+  body('imageUrls')
+    .optional()
+    .isString().withMessage('Las URLs de imagen deben ser un string JSON serializado'),
+  body('variants')
+    .optional()
+    .isArray().withMessage('Las variantes deben ser un array')
 ]
 
 export const deleteProduct = [

@@ -16,9 +16,10 @@ router.get('/categories',    getCategories)
 router.get('/:slug',         getProductBySlug)
 
 // Rutas protegidas — solo admin
-router.post('/',             createProductValidator, validate, isAuth, isAdmin, upload.array('images', 10), createProduct)
-router.put('/:id',           updateProductValidator, validate, isAuth, isAdmin, upload.array('images', 10), updateProduct)
+// IMPORTANTE: multer debe ejecutarse ANTES del validator para que req.body tenga los datos
+router.post('/',             isAuth, isAdmin, upload.array('images', 10), createProductValidator, validate, createProduct)
+router.put('/:id',           isAuth, isAdmin, upload.array('images', 10), updateProductValidator, validate, updateProduct)
 router.delete('/:id',        deleteProductValidator, validate, isAuth, isAdmin, deleteProduct)
-router.post('/categories',   createCategoryValidator, validate, isAuth, isAdmin, createCategory)
+router.post('/categories',    createCategoryValidator, validate, isAuth, isAdmin, createCategory)
 
 export default router

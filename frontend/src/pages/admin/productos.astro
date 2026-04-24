@@ -149,7 +149,7 @@ import '../../styles/admin.css'
 
         categories.forEach(function(cat) {
           const opt1 = new Option(cat.name, cat.slug)
-          const opt2 = new Option(cat.name, cat.id)
+          const opt2 = new Option(cat.name, cat.slug)
           catSelect.add(opt1)
           prodCatSelect.add(opt2)
         })
@@ -202,7 +202,7 @@ import '../../styles/admin.css'
 
       document.querySelectorAll('.edit-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
-          editProduct(btn.getAttribute('data-id'))
+          editProduct(btn.getAttribute('data-id'), products)
         })
       })
 
@@ -295,7 +295,18 @@ import '../../styles/admin.css'
 
       if (!modal || !title || !form) return
 
+      // Limpiar TODOS los campos primero
       form.reset()
+
+      // Limpiar explícitamente el campo de ID
+      document.getElementById('product-id').value = ''
+      document.getElementById('product-name').value = ''
+      document.getElementById('product-description').value = ''
+      document.getElementById('product-price').value = ''
+      document.getElementById('product-stock').value = '0'
+      document.getElementById('product-category').value = ''
+      document.getElementById('product-featured').checked = false
+      document.getElementById('product-image-urls').value = ''
 
       if (product) {
         title.textContent = 'Editar producto'
@@ -324,11 +335,17 @@ import '../../styles/admin.css'
       e.preventDefault()
 
       const productId = document.getElementById('product-id').value
+
+      // Validar solo si hay un valor pero es inválido
+      if (productId && productId === 'undefined') {
+        alert('Error: ID de producto inválido')
+        return
+      }
       const name = document.getElementById('product-name').value
       const description = document.getElementById('product-description').value
       const price = parseFloat(document.getElementById('product-price').value)
       const stock = parseInt(document.getElementById('product-stock').value) || 0
-      const categoryId = document.getElementById('product-category').value
+      const categorySlug = document.getElementById('product-category').value
       const isFeatured = document.getElementById('product-featured').checked
       const imageUrls = document.getElementById('product-image-urls').value.split('\n').filter(function(u) { return u.trim() })
 
@@ -337,7 +354,7 @@ import '../../styles/admin.css'
       formData.append('description', description)
       formData.append('price', price.toString())
       formData.append('stock', stock.toString())
-      formData.append('categoryId', categoryId)
+      formData.append('categorySlug', categorySlug)
       formData.append('isFeatured', isFeatured.toString())
       if (imageUrls.length > 0) {
         formData.append('imageUrls', JSON.stringify(imageUrls.map(function(url) { return url.trim() })))
@@ -357,10 +374,12 @@ import '../../styles/admin.css'
       }
     }
 
-    async function editProduct(id) {
-      const product = products.find(function(p) { return p.id === id })
+    async function editProduct(id, productsList) {
+      const product = productsList.find(function(p) { return String(p.id) === String(id) })
       if (product) {
         openModal(product)
+      } else {
+        console.error('Producto no encontrado:', id)
       }
     }
 

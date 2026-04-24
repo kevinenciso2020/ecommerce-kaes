@@ -49,7 +49,7 @@ export default function HeroSection() {
                 d="M 433 0 A 440 440 90 0 0 866 750 A 440 440 90 0 0 0 750 A 440 440 90 0 0 433 0 Z"
                 transform="translate(40 40)"
                 fill="none"
-                stroke="#ff0000" // Color Rojo
+                stroke="#000000" 
                 strokeWidth="35"
                 strokeLinecap="round"
                 strokeDasharray="40 60"
@@ -69,7 +69,6 @@ export default function HeroSection() {
             animate="visible"
             variants={fadeSlideUp}
           >
-            Nueva temporada
           </motion.p>
 
           <motion.h1

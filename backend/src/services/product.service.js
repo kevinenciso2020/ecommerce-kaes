@@ -85,6 +85,12 @@ export const createProduct = async (data, files) => {
     throw err
   }
 
+  let categoryId = data.categoryId
+  if (!categoryId && data.categorySlug) {
+    const category = await prisma.category.findUnique({ where: { slug: data.categorySlug } })
+    if (category) categoryId = category.id
+  }
+
   const product = await prisma.product.create({
     data: {
       name:        data.name,
@@ -92,7 +98,7 @@ export const createProduct = async (data, files) => {
       description: data.description,
       price:       parseFloat(data.price),
       stock:       parseInt(data.stock) || 0,
-      categoryId:  data.categoryId,
+      categoryId,
       isFeatured:  data.isFeatured === 'true',
     }
   })
@@ -169,6 +175,10 @@ export const updateProduct = async (id, data, files) => {
   if (data.price)       updateData.price       = parseFloat(data.price)
   if (data.stock)       updateData.stock       = parseInt(data.stock)
   if (data.categoryId)  updateData.categoryId  = data.categoryId
+  else if (data.categorySlug) {
+    const category = await prisma.category.findUnique({ where: { slug: data.categorySlug } })
+    if (category) updateData.categoryId = category.id
+  }
   if (data.isActive !== undefined) updateData.isActive   = data.isActive === 'true'
   if (data.isFeatured !== undefined) updateData.isFeatured = data.isFeatured === 'true'
 
