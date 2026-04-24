@@ -266,7 +266,7 @@ import '../../styles/admin.css'
 
       const addProductBtn = document.getElementById('add-product-btn')
       if (addProductBtn) {
-        addProductBtn.addEventListener('click', openModal)
+        addProductBtn.addEventListener('click', function() { openModal() })
       }
 
       const closeModalBtn = document.getElementById('close-modal')
