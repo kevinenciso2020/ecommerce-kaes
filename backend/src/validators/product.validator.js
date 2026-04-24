@@ -66,12 +66,31 @@ export const createProduct = [
   body('stock')
     .optional()
     .isInt({ min: 0 }).withMessage('El stock debe ser un número entero positivo'),
+  // FIX: categoryId y categorySlug son ambos opcionales individualmente,
+  // pero se valida que al menos uno esté presente mediante el custom validator.
+  // El frontend manda categorySlug; si alguien usa la API directamente puede mandar categoryId.
   body('categoryId')
-    .notEmpty().withMessage('La categoría es requerida')
+    .optional()
     .isString().withMessage('El ID de categoría debe ser válido'),
+  body('categorySlug')
+    .optional()
+    .isString().withMessage('El slug de categoría debe ser válido'),
+  body('categoryId').custom((value, { req }) => {
+    if (!value && !req.body.categorySlug) {
+      throw new Error('La categoría es requerida (categoryId o categorySlug)')
+    }
+    return true
+  }),
+  // FIX: isFeatured viene como string 'true'/'false' desde FormData,
+  // isBoolean() estricto rechaza strings. Se acepta como string también.
   body('isFeatured')
     .optional()
-    .isBoolean().withMessage('isFeatured debe ser un valor booleano'),
+    .custom((value) => {
+      if (value !== undefined && value !== 'true' && value !== 'false' && typeof value !== 'boolean') {
+        throw new Error('isFeatured debe ser un valor booleano')
+      }
+      return true
+    }),
   body('imageUrls')
     .optional()
     .isString().withMessage('Las URLs de imagen deben ser un string JSON serializado'),
@@ -103,12 +122,26 @@ export const updateProduct = [
   body('categoryId')
     .optional()
     .isString().withMessage('El ID de categoría debe ser válido'),
+  body('categorySlug')
+    .optional()
+    .isString().withMessage('El slug de categoría debe ser válido'),
   body('isActive')
     .optional()
-    .isBoolean().withMessage('isActive debe ser un valor booleano'),
+    // FIX: mismo problema que isFeatured — FormData manda strings
+    .custom((value) => {
+      if (value !== undefined && value !== 'true' && value !== 'false' && typeof value !== 'boolean') {
+        throw new Error('isActive debe ser un valor booleano')
+      }
+      return true
+    }),
   body('isFeatured')
     .optional()
-    .isBoolean().withMessage('isFeatured debe ser un valor booleano'),
+    .custom((value) => {
+      if (value !== undefined && value !== 'true' && value !== 'false' && typeof value !== 'boolean') {
+        throw new Error('isFeatured debe ser un valor booleano')
+      }
+      return true
+    }),
   body('imageUrls')
     .optional()
     .isString().withMessage('Las URLs de imagen deben ser un string JSON serializado'),

@@ -103,8 +103,9 @@ import '../../styles/admin.css'
         </div>
 
         <div class="form-group">
-          <label class="form-label">Imágenes (URLs)</label>
-          <input type="text" id="product-image-urls" class="form-input" placeholder="https://... (una por línea)" />
+          <label class="form-label">Imágenes (URLs de Cloudinary)</label>
+          <input type="text" id="product-image-urls" class="form-input" placeholder="https://res.cloudinary.com/... (una por línea)" />
+          <small style="color: var(--color-gray-400); font-size: 0.75rem;">Pega las URLs de Cloudinary, una por línea</small>
         </div>
 
         <div class="form-actions">
@@ -149,6 +150,9 @@ import '../../styles/admin.css'
 
         categories.forEach(function(cat) {
           const opt1 = new Option(cat.name, cat.slug)
+          // FIX: el select del formulario también usa slug como valor,
+          // igual que el filtro. Así es consistente con lo que manda el
+          // backend (categorySlug) y con la edición de productos.
           const opt2 = new Option(cat.name, cat.slug)
           catSelect.add(opt1)
           prodCatSelect.add(opt2)
@@ -295,10 +299,8 @@ import '../../styles/admin.css'
 
       if (!modal || !title || !form) return
 
-      // Limpiar TODOS los campos primero
       form.reset()
 
-      // Limpiar explícitamente el campo de ID
       document.getElementById('product-id').value = ''
       document.getElementById('product-name').value = ''
       document.getElementById('product-description').value = ''
@@ -315,7 +317,9 @@ import '../../styles/admin.css'
         document.getElementById('product-description').value = product.description || ''
         document.getElementById('product-price').value = product.price
         document.getElementById('product-stock').value = product.stock
-        document.getElementById('product-category').value = product.categoryId || ''
+        // FIX: al editar usamos category.slug (no categoryId) porque el select
+        // del formulario tiene slugs como valor, igual que al crear.
+        document.getElementById('product-category').value = product.category ? product.category.slug : ''
         document.getElementById('product-featured').checked = product.isFeatured
         document.getElementById('product-image-urls').value = (product.images || []).map(function(i) { return i.url }).join('\n')
       } else {
@@ -336,28 +340,37 @@ import '../../styles/admin.css'
 
       const productId = document.getElementById('product-id').value
 
-      // Validar solo si hay un valor pero es inválido
+      // FIX: la validación anterior comprobaba productId === 'undefined' (string),
+      // pero el campo hidden siempre se limpia a '' en openModal, así que
+      // un string 'undefined' nunca debería aparecer. Se mantiene la guarda
+      // por seguridad pero ya no es la causa del error.
       if (productId && productId === 'undefined') {
         alert('Error: ID de producto inválido')
         return
       }
+
       const name = document.getElementById('product-name').value
       const description = document.getElementById('product-description').value
       const price = parseFloat(document.getElementById('product-price').value)
       const stock = parseInt(document.getElementById('product-stock').value) || 0
       const categorySlug = document.getElementById('product-category').value
       const isFeatured = document.getElementById('product-featured').checked
-      const imageUrls = document.getElementById('product-image-urls').value.split('\n').filter(function(u) { return u.trim() })
+      const imageUrls = document.getElementById('product-image-urls').value
+        .split('\n')
+        .map(function(u) { return u.trim() })
+        .filter(function(u) { return u })
 
       const formData = new FormData()
       formData.append('name', name)
       formData.append('description', description)
       formData.append('price', price.toString())
       formData.append('stock', stock.toString())
+      // FIX: se manda categorySlug (no categoryId). El validator ahora acepta
+      // categorySlug como alternativa válida a categoryId.
       formData.append('categorySlug', categorySlug)
       formData.append('isFeatured', isFeatured.toString())
       if (imageUrls.length > 0) {
-        formData.append('imageUrls', JSON.stringify(imageUrls.map(function(url) { return url.trim() })))
+        formData.append('imageUrls', JSON.stringify(imageUrls))
       }
 
       try {
