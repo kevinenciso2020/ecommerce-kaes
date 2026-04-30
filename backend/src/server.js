@@ -18,7 +18,7 @@ import cartRoutes     from './routes/cart.routes.js'
 import couponRoutes  from './routes/coupon.routes.js'
 
 const app  = express()
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 8000
 
 // ── Seguridad ────────────────────────────────────────────────
 app.use(helmet())
@@ -52,7 +52,7 @@ app.use(cookieParser())
 
 // ── Body parsing ─────────────────────────────────────────────
 // Stripe, MercadoPago y Wompi webhooks necesitan el body en raw, por eso estas rutas van antes del json parser
-app.use('/api/v1/payments/webhook/stripe', express.raw({ type: 'application/json' }))
+// app.use('/api/v1/payments/webhook/stripe', express.raw({ type: 'application/json' })) // TODO: habilitar cuando se configure Stripe
 app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }))
 app.use('/api/v1/payments/wompi/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json({ limit: '10mb' }))
@@ -70,22 +70,52 @@ app.use('/api/v1/admin',    adminRoutes)
 app.use('/api/v1/cart',     cartRoutes)
 app.use('/api/v1/coupons',  couponRoutes)
 
-// Health checks — verificar que el servidor y la DB están vivos
+// Health checks — verificar que el servidor y la DB están vivos con retry logic
 app.get('/api/health', async (req, res) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`
-    res.json({ status: 'ok', db: 'connected', env: process.env.NODE_ENV })
-  } catch (err) {
-    res.status(503).json({ status: 'error', db: 'disconnected', error: err.message })
+  const maxRetries = 3
+  const baseDelay = 1000 // 1 segundo
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await prisma.$queryRaw`SELECT 1`
+      return res.json({ status: 'ok', db: 'connected', env: process.env.NODE_ENV })
+    } catch (err) {
+      if (attempt === maxRetries) {
+        console.error(`[Health] DB connection failed after ${maxRetries} attempts:`, err.message)
+        return res.status(503).json({ 
+          status: 'error', 
+          db: 'disconnected', 
+          attempts: maxRetries,
+          error: err.message 
+        })
+      }
+      const delay = baseDelay * Math.pow(2, attempt - 1) // 1s, 2s, 4s
+      console.log(`[Health] DB connection attempt ${attempt} failed, retrying in ${delay}ms...`)
+      await new Promise(r => setTimeout(r, delay))
+    }
   }
 })
 
 // ── Error handler global (siempre al final) ───────────────────
 app.use(errorHandler)
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`✅ Servidor corriendo en http://localhost:${PORT}`)
   console.log(`📦 Entorno: ${process.env.NODE_ENV}`)
+})
+
+process.on('SIGTERM', async () => {
+  console.log('⚠️ SIGTERM recibido, cerrando servidor...')
+  server.close(async () => {
+    console.log('✅ Conexiones cerradas')
+    try {
+      await prisma.$disconnect()
+      console.log('✅ Prisma desconectado')
+    } catch (err) {
+      console.error('❌ Error al desconectar Prisma:', err.message)
+    }
+    process.exit(0)
+  })
 })
 
 export default app

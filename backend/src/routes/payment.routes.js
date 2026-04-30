@@ -7,6 +7,8 @@ import mpClient from "../config/mercadopago.js";
 import wompi from "../config/wompi.js";
 import { prisma } from "../config/prisma.js";
 import { isAuth } from "../middleware/auth.middleware.js";
+import { discountStock } from "../services/stock.service.js";
+import { sendOrderConfirmation } from "../services/email.service.js";
 
 const router = express.Router();
 
@@ -186,6 +188,12 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
       },
     });
 
+    // Descontar stock solo si el pago fue aprobado
+    if (status === "approved") {
+      await discountStock(orderId);
+      await sendOrderConfirmation(orderId);
+    }
+
     // Crear o actualizar registro de Payment
     await prisma.payment.upsert({
       where: { orderId: orderId },
@@ -219,7 +227,7 @@ router.post("/webhook", express.raw({ type: "application/json" }), async (req, r
 // GET /api/payments/status/:orderId
 // El frontend consulta si ya se aprobó el pago
 // ─────────────────────────────────────────
-router.get("/status/:orderId", async (req, res) => {
+router.get("/status/:orderId", isAuth, async (req, res) => {
   try {
     const { orderId } = req.params;
 
@@ -230,6 +238,7 @@ router.get("/status/:orderId", async (req, res) => {
         status: true,
         paidAt: true,
         total: true,
+        userId: true,
       },
     });
 
@@ -237,7 +246,11 @@ router.get("/status/:orderId", async (req, res) => {
       return res.status(404).json({ error: "Orden no encontrada" });
     }
 
-    return res.json(order);
+    if (order.userId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: "No tienes acceso a esta orden" });
+    }
+
+    return res.json({ id: order.id, status: order.status, paidAt: order.paidAt, total: order.total });
   } catch (error) {
     console.error("Error consultando estado:", error);
     return res.status(500).json({ error: "Error consultando el pago" });
@@ -354,6 +367,12 @@ router.post("/wompi/webhook", express.raw({ type: "application/json" }), async (
         paidAt: status === "APPROVED" ? new Date() : null,
       },
     })
+
+    // Descontar stock solo si el pago fue aprobado
+    if (status === "APPROVED") {
+      await discountStock(orderId)
+      await sendOrderConfirmation(orderId)
+    }
 
     await prisma.payment.upsert({
       where: { orderId: orderId },

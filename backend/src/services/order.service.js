@@ -17,7 +17,17 @@ export const createOrder = async (userId, { items, couponCode, shippingAddressId
   // Aplicar cupón si existe
   let discount = 0
   if (couponCode) {
-    const coupon = await prisma.coupon.findUnique({ where: { code: couponCode.toUpperCase(), isActive: true } })
+    const now = new Date()
+    const coupon = await prisma.coupon.findFirst({
+      where: {
+        code: couponCode.toUpperCase(),
+        isActive: true,
+        startsAt: { lte: now },
+        endsAt: {
+          OR: [{ gte: now }, { isNull: true }]
+        }
+      }
+    })
     if (coupon && (!coupon.maxUses || coupon.usedCount < coupon.maxUses)) {
       if (!coupon.minPurchase || subtotal >= parseFloat(coupon.minPurchase)) {
         discount = coupon.type === 'PERCENTAGE'

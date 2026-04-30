@@ -81,6 +81,65 @@ export const createCoupon = [
     .isISO8601().withMessage('La fecha de fin debe ser una fecha válida (ISO 8601)')
 ]
 
+export const getAllUsers = [
+  query('page')
+    .optional()
+    .isInt({ min: 1 }).withMessage('La página debe ser un número entero positivo'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 }).withMessage('El límite debe estar entre 1 y 100'),
+  query('search')
+    .optional()
+    .trim()
+    .escape()
+    .isLength({ max: 200 }).withMessage('La búsqueda no puede superar los 200 caracteres'),
+  query('role')
+    .optional()
+    .trim()
+    .escape()
+    .isIn(['CUSTOMER', 'ADMIN']).withMessage('Rol inválido')
+]
+
+export const getUserById = [
+  param('id')
+    .notEmpty().withMessage('El ID de usuario es requerido')
+    .isLength({ min: 1, max: 100 }).withMessage('ID inválido')
+]
+
+export const updateUser = [
+  param('id')
+    .notEmpty().withMessage('El ID de usuario es requerido')
+    .isLength({ min: 1, max: 100 }).withMessage('ID inválido'),
+  body('name')
+    .optional()
+    .trim()
+    .notEmpty().withMessage('El nombre no puede estar vacío')
+    .escape()
+    .isLength({ min: 2, max: 100 }).withMessage('El nombre debe tener entre 2 y 100 caracteres'),
+  body('phone')
+    .optional()
+    .trim()
+    .escape()
+    .isLength({ max: 30 }).withMessage('El teléfono no puede superar los 30 caracteres')
+]
+
+export const deleteUser = [
+  param('id')
+    .notEmpty().withMessage('El ID de usuario es requerido')
+    .isLength({ min: 1, max: 100 }).withMessage('ID inválido')
+]
+
+export const updateUserRole = [
+  param('id')
+    .notEmpty().withMessage('El ID de usuario es requerido')
+    .isLength({ min: 1, max: 100 }).withMessage('ID inválido'),
+  body('role')
+    .notEmpty().withMessage('El rol es requerido')
+    .trim()
+    .escape()
+    .isIn(['CUSTOMER', 'ADMIN']).withMessage('Rol inválido')
+]
+
 export const getAllProducts = [
   query('page')
     .optional()

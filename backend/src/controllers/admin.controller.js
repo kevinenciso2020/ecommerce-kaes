@@ -1,5 +1,40 @@
 import * as AdminService from '../services/admin.service.js'
 
+export const getAllUsers = async (req, res, next) => {
+  try {
+    const result = await AdminService.getAllUsers(req.query)
+    res.json(result)
+  } catch (err) { next(err) }
+}
+
+export const getUserById = async (req, res, next) => {
+  try {
+    const user = await AdminService.getUserById(req.params.id)
+    res.json(user)
+  } catch (err) { next(err) }
+}
+
+export const updateUser = async (req, res, next) => {
+  try {
+    const user = await AdminService.updateUser(req.params.id, req.body)
+    res.json(user)
+  } catch (err) { next(err) }
+}
+
+export const deleteUser = async (req, res, next) => {
+  try {
+    const user = await AdminService.deleteUser(req.params.id)
+    res.json(user)
+  } catch (err) { next(err) }
+}
+
+export const updateUserRole = async (req, res, next) => {
+  try {
+    const user = await AdminService.updateUserRole(req.params.id, req.body.role)
+    res.json(user)
+  } catch (err) { next(err) }
+}
+
 export const getAllProducts = async (req, res, next) => {
   try {
     const result = await AdminService.getAllProducts(req.query)

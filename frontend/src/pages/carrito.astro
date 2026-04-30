@@ -69,8 +69,10 @@ import '../styles/carrito.css'
 <script>
   import { cartItems, cartTotal, removeFromCart, updateQuantity, clearCart } from '../stores/cart.store.js'
   import { api } from '../lib/api.js'
+  import { sanitizeCartItem, escapeHtml } from '../lib/sanitize.js'
 
   const renderCart = (items) => {
+    const sanitized = items.map(sanitizeCartItem)
     const total    = cartTotal.get()
     const isEmpty  = items.length === 0
     const emptyEl  = document.getElementById('cart-empty')
@@ -86,8 +88,8 @@ import '../styles/carrito.css'
     // Renderizar items
     const listEl = document.getElementById('cart-items-list')
     if (listEl) {
-      listEl.innerHTML = items.map(item => `
-        <div class="cart-item" data-id="${item.id}" data-size="${item.size}" data-color="${item.color}">
+      listEl.innerHTML = sanitized.map(item => `
+        <div class="cart-item" data-id="${item.id}" data-size="${item.size || ''}" data-color="${item.color || ''}">
           <div class="item-image">
             ${item.image
               ? `<img src="${item.image}" alt="${item.name}" />`
@@ -104,12 +106,12 @@ import '../styles/carrito.css'
           </div>
           <div class="item-controls">
             <div class="quantity-selector">
-              <button class="qty-btn" onclick="changeItemQty('${item.id}','${item.size}','${item.color}',-1)">−</button>
+              <button class="qty-btn" onclick="changeItemQty('${item.id}','${item.size || ''}','${item.color || ''}',-1)">−</button>
               <span>${item.quantity}</span>
-              <button class="qty-btn" onclick="changeItemQty('${item.id}','${item.size}','${item.color}',1)">+</button>
+              <button class="qty-btn" onclick="changeItemQty('${item.id}','${item.size || ''}','${item.color || ''}',1)">+</button>
             </div>
             <p class="item-subtotal">$${Number(item.price * item.quantity).toLocaleString('es-CO')}</p>
-            <button class="remove-btn" onclick="removeItem('${item.id}','${item.size}','${item.color}')">
+            <button class="remove-btn" onclick="removeItem('${item.id}','${item.size || ''}','${item.color || ''}')">
               Eliminar
             </button>
           </div>

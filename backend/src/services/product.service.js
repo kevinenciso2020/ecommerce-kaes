@@ -153,6 +153,15 @@ export const createProduct = async (data, files) => {
     await prisma.productVariant.createMany({
       data: variants.map(v => ({ ...v, productId: product.id }))
     })
+  } else if (data.colors && Array.isArray(data.colors)) {
+    const colors = typeof data.colors === 'string' ? JSON.parse(data.colors) : data.colors
+    await prisma.productVariant.createMany({
+      data: colors.map(color => ({
+        productId: product.id,
+        color: color,
+        stock: parseInt(data.stock) || 0
+      }))
+    })
   }
 
   return prisma.product.findUnique({
@@ -227,6 +236,19 @@ export const updateProduct = async (id, data, files) => {
       )
     )
     await Promise.all(uploadPromises)
+  }
+
+  // Actualizar variants/colores si se proporcionan
+  if (data.colors && Array.isArray(data.colors)) {
+    const colors = typeof data.colors === 'string' ? JSON.parse(data.colors) : data.colors
+    await prisma.productVariant.deleteMany({ where: { productId: id } })
+    await prisma.productVariant.createMany({
+      data: colors.map(color => ({
+        productId: id,
+        color: color,
+        stock: parseInt(data.stock) || product.stock
+      }))
+    })
   }
 
   return prisma.product.findUnique({

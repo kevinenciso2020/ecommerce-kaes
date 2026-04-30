@@ -52,6 +52,7 @@ import ShopLayout from '../../../layouts/ShopLayout.astro'
 <script>
   import { api } from '../../../lib/api.js'
   import { currentUser } from '../../../stores/auth.store.js'
+  import { escapeHtml } from '../../../lib/sanitize.js'
 
   const user = currentUser.get()
   const orderId = window.location.pathname.split('/perfil/ordenes/')[1]
@@ -87,7 +88,7 @@ import ShopLayout from '../../../layouts/ShopLayout.astro'
       itemsEl.innerHTML = (order.items || []).map((item: any) => `
         <div class="item-row">
           <div class="item-info">
-            <span class="item-name">${item.product?.name || 'Producto'}</span>
+            <span class="item-name">${escapeHtml(item.product?.name || 'Producto')}</span>
             <span class="item-qty">Cantidad: ${item.quantity}</span>
           </div>
           <span class="item-price">$${(item.quantity * Number(item.price)).toLocaleString('es-CO')}</span>
@@ -104,9 +105,9 @@ import ShopLayout from '../../../layouts/ShopLayout.astro'
       const shippingEl = document.getElementById('order-shipping')!
       if (order.shippingAddress) {
         shippingEl.innerHTML = `
-          <p>${order.shippingAddress.street}</p>
-          <p>${order.shippingAddress.city}, ${order.shippingAddress.state}</p>
-          <p>${order.shippingAddress.postalCode}</p>
+          <p>${escapeHtml(order.shippingAddress.street)}</p>
+          <p>${escapeHtml(order.shippingAddress.city)}, ${escapeHtml(order.shippingAddress.state)}</p>
+          <p>${escapeHtml(order.shippingAddress.postalCode)}</p>
         `
       } else {
         shippingEl.innerHTML = '<p>Retiro en tienda</p>'

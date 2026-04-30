@@ -96,7 +96,10 @@ export const createProduct = [
     .isString().withMessage('Las URLs de imagen deben ser un string JSON serializado'),
   body('variants')
     .optional()
-    .isArray().withMessage('Las variantes deben ser un array')
+    .isArray().withMessage('Las variantes deben ser un array'),
+  body('colors')
+    .optional()
+    .isArray().withMessage('Los colores deben ser un array')
 ]
 
 export const updateProduct = [
@@ -147,7 +150,10 @@ export const updateProduct = [
     .isString().withMessage('Las URLs de imagen deben ser un string JSON serializado'),
   body('variants')
     .optional()
-    .isArray().withMessage('Las variantes deben ser un array')
+    .isArray().withMessage('Las variantes deben ser un array'),
+  body('colors')
+    .optional()
+    .isArray().withMessage('Los colores deben ser un array')
 ]
 
 export const deleteProduct = [

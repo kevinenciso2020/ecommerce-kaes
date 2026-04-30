@@ -1,5 +1,121 @@
 import { prisma } from '../config/prisma.js'
 
+export const getAllUsers = async ({ page = 1, limit = 20, search, role }) => {
+  const where = { isActive: true }
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { email: { contains: search, mode: 'insensitive' } },
+    ]
+  }
+  if (role) where.role = role
+
+  const skip = (page - 1) * limit
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      skip,
+      take: Number(limit),
+      select: {
+        id: true, name: true, email: true, role: true, avatar: true, phone: true,
+        isActive: true, createdAt: true,
+        _count: { select: { orders: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.user.count({ where }),
+  ])
+
+  return { users, total, page: Number(page), totalPages: Math.ceil(total / limit) }
+}
+
+export const getUserById = async (id) => {
+  const user = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true, name: true, email: true, role: true, avatar: true, phone: true,
+      isActive: true, createdAt: true, updatedAt: true,
+      orders: {
+        select: { id: true, status: true, total: true, createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      },
+      addresses: {
+        select: { id: true, label: true, street: true, city: true },
+      },
+    },
+  })
+
+  if (!user) {
+    const err = new Error('Usuario no encontrado')
+    err.status = 404
+    throw err
+  }
+
+  return user
+}
+
+export const updateUser = async (id, data) => {
+  try {
+    return await prisma.user.update({
+      where: { id },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.phone !== undefined && { phone: data.phone }),
+      },
+      select: {
+        id: true, name: true, email: true, role: true, avatar: true, phone: true,
+        isActive: true, createdAt: true, updatedAt: true,
+      },
+    })
+  } catch (e) {
+    if (e.code === 'P2025') {
+      const err = new Error('Usuario no encontrado')
+      err.status = 404
+      throw err
+    }
+    throw e
+  }
+}
+
+export const deleteUser = async (id) => {
+  try {
+    return await prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+      select: {
+        id: true, name: true, email: true, role: true, isActive: true,
+      },
+    })
+  } catch (e) {
+    if (e.code === 'P2025') {
+      const err = new Error('Usuario no encontrado')
+      err.status = 404
+      throw err
+    }
+    throw e
+  }
+}
+
+export const updateUserRole = async (id, role) => {
+  try {
+    return await prisma.user.update({
+      where: { id },
+      data: { role },
+      select: {
+        id: true, name: true, email: true, role: true,
+      },
+    })
+  } catch (e) {
+    if (e.code === 'P2025') {
+      const err = new Error('Usuario no encontrado')
+      err.status = 404
+      throw err
+    }
+    throw e
+  }
+}
+
 export const getAllOrders = async ({ page = 1, limit = 20, status }) => {
   const where = status ? { status } : {}
   const skip  = (page - 1) * limit
@@ -18,7 +134,22 @@ export const getAllOrders = async ({ page = 1, limit = 20, status }) => {
   return { orders, total, page: Number(page), totalPages: Math.ceil(total / limit) }
 }
 
+import { restoreStock } from './stock.service.js'
+
 export const updateOrderStatus = async (orderId, status) => {
+  const order = await prisma.order.findUnique({ where: { id: orderId } })
+  
+  if (!order) {
+    throw Object.assign(new Error('Orden no encontrada'), { status: 404 })
+  }
+
+  const wasPendingOrConfirmed = order.status === 'PENDING' || order.status === 'CONFIRMED'
+  const isNowCancelled = status === 'CANCELLED'
+
+  if (wasPendingOrConfirmed && isNowCancelled) {
+    await restoreStock(orderId)
+  }
+
   return prisma.order.update({ where: { id: orderId }, data: { status } })
 }
 
@@ -84,6 +215,7 @@ export const getAllProducts = async ({ page = 1, limit = 20, search, category, i
       include: {
         category: { select: { name: true, slug: true } },
         images:   { where: { isMain: true }, take: 1 },
+        variants: { select: { size: true, color: true, stock: true } }
       }
     }),
     prisma.product.count({ where })

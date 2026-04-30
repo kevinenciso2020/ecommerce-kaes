@@ -89,13 +89,28 @@ import '../styles/checkout.css'
         <h2 class="summary-title">Tu pedido</h2>
         <div id="order-items"></div>
         <div class="summary-divider"></div>
+
+        <!-- Aplicar cupón -->
+        <div class="coupon-section">
+          <div class="coupon-input-group">
+            <input type="text" id="coupon-code" class="coupon-input" placeholder="Código de cupón" />
+            <button type="button" id="apply-coupon-btn" class="coupon-btn">Aplicar</button>
+          </div>
+          <div id="coupon-message" class="coupon-message"></div>
+          <div id="coupon-applied" class="coupon-applied" style="display:none">
+            <span id="applied-code"></span>
+            <button type="button" id="remove-coupon-btn" class="remove-coupon-btn">✕</button>
+          </div>
+        </div>
+
+        <div class="summary-divider"></div>
         <div class="summary-row">
           <span>Subtotal</span>
           <span id="order-subtotal">$0</span>
         </div>
-        <div class="summary-row">
+        <div class="summary-row" id="discount-row" style="display:none">
           <span>Descuento</span>
-          <span id="order-discount" class="discount-amount">$0</span>
+          <span id="order-discount" class="discount-amount">-$0</span>
         </div>
         <div class="summary-row">
           <span>Envío</span>
@@ -114,10 +129,120 @@ import '../styles/checkout.css'
 
 <script>
   import { cartItems, cartTotal, clearCart } from '../stores/cart.store.js'
+  import { applyCoupon, removeCoupon, getCouponCode } from '../stores/coupon.store.js'
   import { api } from '../lib/api.js'
+  import { sanitizeCartItem } from '../lib/sanitize.js'
 
-  const items = cartItems.get()
-  const total = cartTotal.get()
+  let currentDiscount = 0
+  let appliedCouponData = null
+
+  // Mostrar cupón guardado si existe
+  const savedCoupon = getCouponCode()
+  if (savedCoupon) {
+    const codeEl = document.getElementById('applied-code')
+    const appliedEl = document.getElementById('coupon-applied')
+    const inputEl = document.getElementById('coupon-code')
+    if (codeEl) codeEl.textContent = savedCoupon
+    if (appliedEl) appliedEl.style.display = 'flex'
+    if (inputEl) inputEl.style.display = 'none'
+  }
+
+  // Función para actualizar totales
+  const updateTotals = (subtotal, discount = 0) => {
+    currentDiscount = discount
+    const discountRow = document.getElementById('discount-row')
+    const discountEl = document.getElementById('order-discount')
+    const totalEl = document.getElementById('order-total')
+
+    if (discount > 0 && discountRow && discountEl && totalEl) {
+      discountRow.style.display = 'flex'
+      discountEl.textContent = '-$' + Number(discount).toLocaleString('es-CO')
+      const total = subtotal - discount
+      totalEl.textContent = '$' + Number(Math.max(0, total)).toLocaleString('es-CO')
+    } else if (totalEl) {
+      discountRow.style.display = 'none'
+      totalEl.textContent = '$' + Number(subtotal).toLocaleString('es-CO')
+    }
+  }
+
+  // Aplicar cupón
+  document.getElementById('apply-coupon-btn')?.addEventListener('click', async () => {
+    const codeInput = document.getElementById('coupon-code') as HTMLInputElement | null
+    const messageEl = document.getElementById('coupon-message')
+    const appliedEl = document.getElementById('coupon-applied')
+
+    const code = codeInput?.value.trim().toUpperCase()
+    if (!code) {
+      if (messageEl) {
+        messageEl.textContent = 'Ingresa un código'
+        messageEl.className = 'coupon-message error'
+      }
+      return
+    }
+
+    try {
+      const result = await api.coupons.validate(code)
+
+      if (result.valid) {
+        appliedCouponData = result.coupon
+        applyCoupon(code, result.coupon)
+
+        const codeEl = document.getElementById('applied-code')
+        if (codeEl) codeEl.textContent = code
+        if (appliedEl) appliedEl.style.display = 'flex'
+        if (codeInput) codeInput.style.display = 'none'
+        if (messageEl) {
+          messageEl.textContent = result.coupon.type === 'PERCENTAGE'
+            ? `${result.coupon.value}% de descuento aplicado`
+            : `$${Number(result.coupon.value).toLocaleString('es-CO')} de descuento aplicado`
+          messageEl.className = 'coupon-message success'
+        }
+
+        const subtotal = cartTotal.get()
+        const discount = result.coupon.type === 'PERCENTAGE'
+          ? subtotal * (parseFloat(result.coupon.value) / 100)
+          : parseFloat(result.coupon.value)
+        updateTotals(subtotal, discount)
+      } else {
+        if (messageEl) {
+          messageEl.textContent = result.message || 'Cupón inválido'
+          messageEl.className = 'coupon-message error'
+        }
+      }
+    } catch (err) {
+      if (messageEl) {
+        messageEl.textContent = err.message || 'Error al validar cupón'
+        messageEl.className = 'coupon-message error'
+      }
+    }
+  })
+
+  // Remover cupón
+  document.getElementById('remove-coupon-btn')?.addEventListener('click', () => {
+    removeCoupon()
+    appliedCouponData = null
+
+    const codeInput = document.getElementById('coupon-code') as HTMLInputElement | null
+    const appliedEl = document.getElementById('coupon-applied')
+    const messageEl = document.getElementById('coupon-message')
+    const discountRow = document.getElementById('discount-row')
+
+    if (codeInput) {
+      codeInput.style.display = 'block'
+      codeInput.value = ''
+    }
+    if (appliedEl) appliedEl.style.display = 'none'
+    if (messageEl) {
+      messageEl.textContent = ''
+      messageEl.className = 'coupon-message'
+    }
+
+    const subtotal = cartTotal.get()
+    updateTotals(subtotal, 0)
+  })
+
+  const items = cartItems.get().map(sanitizeCartItem)
+  const subtotal = cartTotal.get()
 
   // Verificar si hay items
   if (items.length === 0) {
@@ -146,7 +271,7 @@ import '../styles/checkout.css'
       `).join('')
     }
 
-    const formatted = '$' + Number(total).toLocaleString('es-CO')
+    const formatted = '$' + Number(subtotal).toLocaleString('es-CO')
     document.getElementById('order-subtotal').textContent = formatted
     document.getElementById('order-total').textContent    = formatted
   }
@@ -190,7 +315,7 @@ import '../styles/checkout.css'
     errorEl.style.display = 'none'
 
     try {
-      const couponCode = localStorage.getItem('couponCode') || undefined
+      const couponCode = getCouponCode() || undefined
 
       const orderItems = cartItems.get().map(item => ({
         productId: item.id,
@@ -220,7 +345,7 @@ import '../styles/checkout.css'
       }
 
       clearCart()
-      localStorage.removeItem('couponCode')
+      removeCoupon()
 
       if (paymentUrl) {
         window.location.href = paymentUrl
@@ -423,6 +548,59 @@ import '../styles/checkout.css'
 
   .discount-amount { color: var(--color-success); }
   .shipping-free   { color: var(--color-success); font-weight: 500; }
+
+  /* Cupón */
+  .coupon-section { margin-bottom: var(--space-4); }
+  .coupon-input-group { display: flex; gap: var(--space-2); }
+  .coupon-input {
+    flex: 1;
+    padding: var(--space-2) var(--space-3);
+    border: 1.5px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+  }
+  .coupon-input:focus {
+    outline: none;
+    border-color: var(--color-black);
+  }
+  .coupon-btn {
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-black);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .coupon-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .coupon-message {
+    font-size: 0.75rem;
+    margin-top: var(--space-2);
+  }
+  .coupon-message.error { color: var(--color-error); }
+  .coupon-message.success { color: var(--color-success); }
+  .coupon-applied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-2) var(--space-3);
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-success);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    color: var(--color-success);
+  }
+  .remove-coupon-btn {
+    background: none;
+    border: none;
+    color: var(--color-gray-400);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 var(--space-1);
+  }
+  .remove-coupon-btn:hover { color: var(--color-error); }
 
   .total-row {
     font-size:  1rem;

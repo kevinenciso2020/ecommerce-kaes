@@ -1,6 +1,16 @@
 import { Router } from 'express'
 import rateLimit from 'express-rate-limit'
-import { getAllProducts, getAllOrders, updateOrderStatus, createDiscount, createCoupon, getCoupons, getDiscounts, getDashboardStats } from '../controllers/admin.controller.js'
+import { validate } from '../middleware/validate.js'
+import { 
+  getAllProducts, getAllOrders, updateOrderStatus, createDiscount, 
+  createCoupon, getCoupons, getDiscounts, getDashboardStats,
+  getAllUsers, getUserById, updateUser, deleteUser, updateUserRole
+} from '../controllers/admin.controller.js'
+import { 
+  getAllUsers as getAllUsersValidator, getUserById as getUserByIdValidator,
+  updateUser as updateUserValidator, deleteUser as deleteUserValidator,
+  updateUserRole as updateUserRoleValidator
+} from '../validators/admin.validator.js'
 import { isAuth, isAdmin } from '../middleware/auth.middleware.js'
 
 const router = Router()
@@ -32,6 +42,12 @@ router.put('/orders/:id/status',  updateOrderStatus)
 router.get('/discounts',          getDiscounts)
 router.post('/discounts',         createDiscount)
 router.get('/coupons',            getCoupons)
-router.post('/coupons',           createCoupon)
+router.post('/coupons',          createCoupon)
+
+router.get('/users',              validate(getAllUsersValidator), getAllUsers)
+router.get('/users/:id',          validate(getUserByIdValidator), getUserById)
+router.put('/users/:id',          validate(updateUserValidator), updateUser)
+router.delete('/users/:id',       validate(deleteUserValidator), deleteUser)
+router.put('/users/:id/role',     validate(updateUserRoleValidator), updateUserRole)
 
 export default router

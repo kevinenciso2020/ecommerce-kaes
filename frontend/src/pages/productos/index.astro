@@ -1,6 +1,7 @@
 ---
 import ShopLayout from '../../layouts/ShopLayout.astro'
 import '../../styles/productos.css'
+import { api } from '../../lib/api.js'
 
 let products: any[]   = []
 let categories: any[] = []
@@ -21,22 +22,14 @@ if (minPrice) queryParams.minPrice = minPrice
 if (maxPrice) queryParams.maxPrice = maxPrice
 if (size)     queryParams.size     = size
 
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api/v1'
-
 try {
-  const [productsRes, categoriesRes] = await Promise.all([
-    fetch(`${apiUrl}/products?${new URLSearchParams(queryParams)}`),
-    fetch(`${apiUrl}/products/categories`)
+  const [productsData, categoriesData] = await Promise.all([
+    api.products.list(queryParams),
+    api.categories.list()
   ])
-  if (productsRes.ok) {
-    const data = await productsRes.json()
-    products   = Array.isArray(data.products) ? data.products : []
-    pagination = data.pagination || {}
-  }
-  if (categoriesRes.ok) {
-    const data = await categoriesRes.json()
-    categories = Array.isArray(data) ? data : []
-  }
+  products   = Array.isArray(productsData.products) ? productsData.products : []
+  pagination = productsData.pagination || {}
+  categories = Array.isArray(categoriesData) ? categoriesData : []
 } catch (e) {
   console.error('Error:', e)
 }

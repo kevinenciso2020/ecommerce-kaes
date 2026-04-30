@@ -190,18 +190,9 @@ import '../../styles/admin.css'
     }
 
     try {
-      const response = await fetch('/api/v1/admin/products', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
-        },
-        body: formData
-      })
-
-      if (response.ok) {
-        alert('Archivos subidos correctamente')
-        loadProducts()
-      }
+      await api.products.create(formData)
+      alert('Archivos subidos correctamente')
+      loadProducts()
     } catch (err) {
       console.error('Upload error:', err)
       alert('Error al subir archivos')

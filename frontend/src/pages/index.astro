@@ -5,16 +5,13 @@ import CategoriesSection from '../components/sections/CategoriesSection.tsx'
 import FeaturedProducts from '../components/sections/FeaturedProducts.tsx'
 import CtaBanner from '../components/sections/CtaBanner.tsx'
 import '../styles/index.css'
+import { api } from '../lib/api.js'
 
 let featuredProducts: any[] = []
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api/v1'
 
 try {
-  const res = await fetch(`${apiUrl}/products?featured=true&limit=8`)
-  if (res.ok) {
-    const data = await res.json()
-    featuredProducts = Array.isArray(data.products) ? data.products : []
-  }
+  const data = await api.products.list({ featured: true, limit: 8 })
+  featuredProducts = Array.isArray(data.products) ? data.products : []
 } catch (e) {
   console.error('Error loading products:', e)
 }

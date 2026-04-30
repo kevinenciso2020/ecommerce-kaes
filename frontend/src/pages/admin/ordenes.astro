@@ -66,6 +66,7 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
 <script>
   import { api } from '../../lib/api.js'
   import { currentUser } from '../../stores/auth.store.js'
+  import { escapeHtml, sanitizeOrder } from '../../lib/sanitize.js'
 
   let orders = []
   let currentPage = 1
@@ -84,14 +85,14 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
   async function loadOrders(params = {}) {
     try {
       const result = await api.admin.orders(params)
-      orders = result.orders
+      orders = result.orders.map(sanitizeOrder)
       currentPage = result.page
       totalPages = result.totalPages
       renderOrders()
       renderPagination()
     } catch (err: any) {
       const tbody = document.getElementById('orders-tbody')!
-      tbody.innerHTML = `<tr><td colspan="6" class="error">${err.message}</td></tr>`
+      tbody.innerHTML = `<tr><td colspan="6" class="error">${escapeHtml(err.message)}</td></tr>`
     }
   }
 
@@ -117,8 +118,8 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
         <td><strong>#${o.id.slice(-6).toUpperCase()}</strong></td>
         <td>
           <div class="customer-info">
-            <span class="customer-name">${o.user?.name || '—'}</span>
-            <span class="customer-email">${o.user?.email || ''}</span>
+            <span class="customer-name">${escapeHtml(o.user?.name || '—')}</span>
+            <span class="customer-email">${escapeHtml(o.user?.email || '')}</span>
           </div>
         </td>
         <td>$${Number(o.total).toLocaleString('es-CO')}</td>
@@ -197,8 +198,8 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
       </div>
       <div class="order-customer">
         <h3>Cliente</h3>
-        <p>${order.user?.name || '—'}</p>
-        <p>${order.user?.email || ''}</p>
+        <p>${escapeHtml(order.user?.name || '—')}</p>
+        <p>${escapeHtml(order.user?.email || '')}</p>
       </div>
       <div class="order-items">
         <h3>Items</h3>
@@ -207,7 +208,7 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
           <tbody>
             ${(order.items || []).map((item: any) => `
               <tr>
-                <td>${item.product?.name || 'Producto'}</td>
+                <td>${escapeHtml(item.product?.name || 'Producto')}</td>
                 <td>${item.quantity}</td>
                 <td>$${Number(item.price).toLocaleString('es-CO')}</td>
                 <td>$${(item.quantity * Number(item.price)).toLocaleString('es-CO')}</td>

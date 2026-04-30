@@ -25,16 +25,14 @@ export const onRequest = async (context, next) => {
   const token = request.headers.get('cookie')?.match(/accessToken=([^;]+)/)?.[1]
 
   if (!token) {
-    locals.isAdmin = false
-    return next()
+    return context.redirect('/auth/login')
   }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET)
 
     if (!isAdminRole(decoded.role)) {
-      locals.isAdmin = false
-      return next()
+      return context.redirect('/auth/login')
     }
 
     locals.user = decoded
@@ -43,7 +41,6 @@ export const onRequest = async (context, next) => {
 
     return next()
   } catch (err) {
-    locals.isAdmin = false
-    return next()
+    return context.redirect('/auth/login')
   }
 }

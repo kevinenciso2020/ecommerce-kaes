@@ -65,7 +65,7 @@ export const validateStock = async (orderId) => {
 export const discountStock = async (orderId) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: true }
+    include: { items: { include: { product: true } } }
   })
 
   if (!order) {
@@ -74,27 +74,42 @@ export const discountStock = async (orderId) => {
 
   await prisma.$transaction(async (tx) => {
     for (const item of order.items) {
+      const product = item.product
+      let variant = null
+      let stockSource = 'product'
+
       if (item.size && item.color) {
-        const variant = await tx.productVariant.findFirst({
+        variant = await tx.productVariant.findFirst({
           where: {
             productId: item.productId,
             size: item.size,
             color: item.color
           }
         })
-
-        if (variant && variant.stock >= item.quantity) {
-          await tx.productVariant.update({
-            where: { id: variant.id },
-            data: { stock: { decrement: item.quantity } }
-          })
-        }
+        stockSource = 'variant'
       }
 
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity } }
-      })
+      if (variant) {
+        if (variant.stock < item.quantity) {
+          throw Object.assign(new Error(
+            `Stock insuficiente: ${product.name} (${item.size}/${item.color}) - disponible: ${variant.stock}, solicitado: ${item.quantity}`
+          ), { status: 400, code: 'INSUFFICIENT_STOCK' })
+        }
+        await tx.productVariant.update({
+          where: { id: variant.id },
+          data: { stock: { decrement: item.quantity } }
+        })
+      } else {
+        if (product.stock < item.quantity) {
+          throw Object.assign(new Error(
+            `Stock insuficiente: ${product.name} - disponible: ${product.stock}, solicitado: ${item.quantity}`
+          ), { status: 400, code: 'INSUFFICIENT_STOCK' })
+        }
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } }
+        })
+      }
     }
 
     console.log(`✅ Stock descontado para orden ${orderId}`)
@@ -127,13 +142,19 @@ export const restoreStock = async (orderId) => {
             where: { id: variant.id },
             data: { stock: { increment: item.quantity } }
           })
+          continue
         }
-      }
 
-      await tx.product.update({
-        where: { id: item.productId },
-        data: { stock: { increment: item.quantity } }
-      })
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } }
+        })
+      } else {
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { increment: item.quantity } }
+        })
+      }
     }
 
     console.log(`✅ Stock restaurado para orden ${orderId}`)

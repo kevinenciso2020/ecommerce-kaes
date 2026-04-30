@@ -189,6 +189,7 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
 <script>
   import { api } from '../../lib/api.js'
   import { currentUser } from '../../stores/auth.store.js'
+  import { escapeHtml } from '../../lib/sanitize.js'
 
   let coupons: any[] = []
   let discounts: any[] = []
@@ -231,7 +232,7 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
 
     tbody.innerHTML = coupons.map(c => `
       <tr>
-        <td><code class="coupon-code">${c.code}</code></td>
+        <td><code class="coupon-code">${escapeHtml(c.code)}</code></td>
         <td>${c.type === 'PERCENTAGE' ? '%' : '$'}</td>
         <td>${Number(c.value)}${c.type === 'PERCENTAGE' ? '%' : ''}</td>
         <td>${c.minPurchase ? '$' + Number(c.minPurchase).toLocaleString('es-CO') : '—'}</td>
@@ -256,10 +257,10 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
     }
 
     tbody.innerHTML = discounts.map(d => {
-      const productNames = d.products?.map((p: any) => p.product?.name).join(', ') || '—'
+      const productNames = d.products?.map((p: any) => escapeHtml(p.product?.name)).join(', ') || '—'
       return `
         <tr>
-          <td>${d.name}</td>
+          <td>${escapeHtml(d.name)}</td>
           <td>${d.type === 'PERCENTAGE' ? '%' : '$'}</td>
           <td>${Number(d.value)}${d.type === 'PERCENTAGE' ? '%' : ''}</td>
           <td>${productNames}</td>
@@ -282,7 +283,7 @@ import ShopLayout from '../../layouts/ShopLayout.astro'
 
   function populateProductSelect() {
     const sel = document.getElementById('discount-products') as HTMLSelectElement
-    sel.innerHTML = products.map(p => `<option value="${p.id}">${p.name}</option>`).join('')
+    sel.innerHTML = products.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')
   }
 
   function setupEventListeners() {

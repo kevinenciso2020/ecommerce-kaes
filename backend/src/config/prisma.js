@@ -8,7 +8,7 @@ export const prisma =
     log: process.env.NODE_ENV === 'development' ? ['query'] : [],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL + '?connection_limit=5&connect_timeout=10',
+        url: process.env.DATABASE_URL + '?connection_limit=5&connect_timeout=30&pool_timeout=30&statement_timeout=10000',
       },
     },
   })

@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3000/api/v1'
+const BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:8000/api/v1'
 const FRONTEND_URL = import.meta.env.PUBLIC_FRONTEND_URL || 'http://localhost:4321'
 
 let isRefreshing = false
@@ -37,6 +37,28 @@ const clearAuthData = () => {
   localStorage.removeItem('user')
 }
 
+const fetchWithRetry = async (url, config, maxRetries = 3, baseDelay = 1000) => {
+  let lastError
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, config)
+      return res
+    } catch (err) {
+      lastError = err
+      const isNetworkError = err instanceof TypeError && 
+        (err.message === 'Failed to fetch' || 
+         err.message.includes('network') || 
+         err.message.includes('NetworkError') ||
+         err.message.includes('Connection'))
+      if (!isNetworkError || attempt === maxRetries) throw err
+      const delay = baseDelay * Math.pow(2, attempt - 1)
+      console.log(`[API] Network error, retry ${attempt}/${maxRetries} in ${delay}ms...`)
+      await new Promise(r => setTimeout(r, delay))
+    }
+  }
+  throw lastError
+}
+
 const request = async (endpoint, options = {}) => {
   const isFormData = options.body instanceof FormData
 
@@ -55,14 +77,14 @@ const request = async (endpoint, options = {}) => {
     ...options,
   }
 
-  let res = await fetch(`${BASE_URL}${endpoint}`, config)
+  let res = await fetchWithRetry(`${BASE_URL}${endpoint}`, config)
 
   if (res.status === 401 && !endpoint.includes('/auth/refresh')) {
     if (!isRefreshing) {
       isRefreshing = true
       try {
         await refreshAccessToken()
-        res = await fetch(`${BASE_URL}${endpoint}`, config)
+        res = await fetchWithRetry(`${BASE_URL}${endpoint}`, config)
       } catch (err) {
         isRefreshing = false
         throw err
@@ -71,7 +93,7 @@ const request = async (endpoint, options = {}) => {
     } else {
       return new Promise((resolve) => {
         subscribeTokenRefresh(() => {
-          resolve(fetch(`${BASE_URL}${endpoint}`, config).then(r => r.json()))
+          resolve(fetchWithRetry(`${BASE_URL}${endpoint}`, config).then(r => r.json()))
         })
       })
     }

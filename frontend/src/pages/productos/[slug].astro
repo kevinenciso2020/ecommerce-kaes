@@ -1,6 +1,7 @@
 ---
 import ShopLayout from '../../layouts/ShopLayout.astro'
 import '../../styles/product-detail.css'
+import { api } from '../../lib/api.js'
 
 const { slug } = Astro.params
 
@@ -8,9 +9,7 @@ let product: any = null
 let error        = false
 
 try {
-  const res = await fetch(`${import.meta.env.PUBLIC_API_URL}/products/${slug}`)
-  if (!res.ok) error = true
-  else product = await res.json()
+  product = await api.products.detail(slug)
 } catch (e) {
   error = true
 }
