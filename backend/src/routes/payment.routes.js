@@ -331,6 +331,35 @@ router.post("/wompi/webhook", express.raw({ type: "application/json" }), async (
       return res.sendStatus(200)
     }
 
+    const wompiId        = req.headers["x-wompi-event-id"]
+    const wompiTimestamp = req.headers["x-wompi-timestamp"]
+    const wompiSignature = req.headers["x-wompi-signature"]
+
+    if (!wompiId || !wompiTimestamp || !wompiSignature) {
+      console.warn("Webhook Wompi recibido sin firma o headers requeridos")
+      return res.sendStatus(401).json({ error: "Firma requerida" })
+    }
+
+    const bodyString = typeof req.body === "string" ? req.body : JSON.stringify(req.body)
+    const manifest  = `${wompiId}.${wompiTimestamp}.${bodyString}`
+
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.WOMPI_WEBHOOK_SECRET)
+      .update(manifest)
+      .digest("hex")
+
+    const secretBuffer   = Buffer.from(process.env.WOMPI_WEBHOOK_SECRET)
+    const receivedBuffer = Buffer.from(wompiSignature)
+    if (secretBuffer.length !== receivedBuffer.length ||
+        !crypto.timingSafeEqual(secretBuffer.slice(0, 1), receivedBuffer.slice(0, 1))) {
+      // basic length check fallback
+    }
+
+    if (!crypto.timingSafeEqual(Buffer.from(expectedSignature), Buffer.from(wompiSignature))) {
+      console.warn("Webhook Wompi: firma inválida")
+      return res.sendStatus(401).json({ error: "Firma inválida" })
+    }
+
     const transaction = event.data.object
     const transactionId = transaction.id
     const status = transaction.status
