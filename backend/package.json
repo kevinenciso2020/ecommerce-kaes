@@ -6,7 +6,7 @@
     "dev": "nodemon src/server.js",
     "build": "prisma generate",
     "start": "node index.js",
-    "start:prod": "npx prisma migrate deploy && node src/server.js",
+    "start:prod": "node -e \"console.log('DB:', process.env.DATABASE_URL ? 'FOUND' : 'MISSING')\" && npx prisma migrate deploy && node src/server.js",
     "db:migrate": "npx prisma migrate dev",
     "db:push": "npx prisma db push",
     "db:studio": "npx prisma studio",
