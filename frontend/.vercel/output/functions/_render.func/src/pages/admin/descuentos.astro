@@ -1,0 +1,480 @@
+---
+import ShopLayout from '../../layouts/ShopLayout.astro'
+---
+
+<ShopLayout title="Admin - Descuentos">
+  <div class="admin-page container" id="admin-content" style="display:none">
+
+    <div class="admin-header">
+      <h1 class="admin-title">Descuentos</h1>
+      <p class="admin-sub">Gestiona descuentos y cupones</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="coupons">Cupones</button>
+      <button class="tab-btn" data-tab="discounts">Descuentos</button>
+    </div>
+
+    <div class="tab-content" id="coupons-tab">
+      <div class="section-header">
+        <h2>Cupones</h2>
+        <button class="btn btn-primary" id="add-coupon-btn">+ Nuevo cupón</button>
+      </div>
+      <div class="items-table-wrap">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Uso mín.</th>
+              <th>Usos</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="coupons-tbody">
+            <tr><td colspan="7" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="discounts-tab" style="display:none">
+      <div class="section-header">
+        <h2>Descuentos por producto</h2>
+        <button class="btn btn-primary" id="add-discount-btn">+ Nuevo descuento</button>
+      </div>
+      <div class="items-table-wrap">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Productos</th>
+              <th>Vigencia</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="discounts-tbody">
+            <tr><td colspan="7" class="loading">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <div id="no-access" style="display:none" class="no-access">
+    <p>No tienes permisos para ver esta página</p>
+    <a href="/" class="btn btn-primary">Volver al inicio</a>
+  </div>
+
+  <div id="coupon-modal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="coupon-modal-title">Nuevo cupón</h2>
+        <button class="modal-close" id="close-coupon-modal">&times;</button>
+      </div>
+      <form id="coupon-form" class="admin-form">
+        <input type="hidden" id="coupon-id" />
+
+        <div class="form-group">
+          <label class="form-label">Código</label>
+          <input type="text" id="coupon-code" class="form-input" required style="text-transform: uppercase" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select id="coupon-type" class="form-input" required>
+              <option value="PERCENTAGE">Porcentaje</option>
+              <option value="FIXED">Fijo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor</label>
+            <input type="number" id="coupon-value" class="form-input" step="0.01" min="0" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Compra mínima</label>
+            <input type="number" id="coupon-min" class="form-input" step="0.01" min="0" placeholder="Opcional" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Usos máximos</label>
+            <input type="number" id="coupon-max" class="form-input" min="1" placeholder="Ilimitado" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Inicio</label>
+            <input type="date" id="coupon-start" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fin</label>
+            <input type="date" id="coupon-end" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancel-coupon-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="discount-modal" class="modal" style="display:none">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="discount-modal-title">Nuevo descuento</h2>
+        <button class="modal-close" id="close-discount-modal">&times;</button>
+      </div>
+      <form id="discount-form" class="admin-form">
+        <input type="hidden" id="discount-id" />
+
+        <div class="form-group">
+          <label class="form-label">Nombre</label>
+          <input type="text" id="discount-name" class="form-input" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tipo</label>
+            <select id="discount-type" class="form-input" required>
+              <option value="PERCENTAGE">Porcentaje</option>
+              <option value="FIXED">Fijo</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valor</label>
+            <input type="number" id="discount-value" class="form-input" step="0.01" min="0" required />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Inicio</label>
+            <input type="date" id="discount-start" class="form-input" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fin</label>
+            <input type="date" id="discount-end" class="form-input" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Productos</label>
+          <select id="discount-products" class="form-input" multiple size="5">
+            <option value="">Cargando...</option>
+          </select>
+          <small>Selecciona varios manteniendo Ctrl/Cmd</small>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="cancel-discount-btn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</ShopLayout>
+
+<script>
+  import { api } from '../../lib/api.js'
+  import { currentUser } from '../../stores/auth.store.js'
+  import { escapeHtml } from '../../lib/sanitize.js'
+
+  let coupons: any[] = []
+  let discounts: any[] = []
+  let products: any[] = []
+
+  const user = currentUser.get()
+
+  if (!user || user.role !== 'ADMIN') {
+    document.getElementById('no-access')!.style.display = 'flex'
+  } else {
+    document.getElementById('admin-content')!.style.display = 'block'
+    loadData()
+    setupEventListeners()
+  }
+
+  async function loadData() {
+    try {
+      const [couponsData, discountsData, productsData] = await Promise.all([
+        api.admin.coupons(),
+        api.admin.discounts(),
+        api.admin.products({ limit: 100 })
+      ])
+      coupons = couponsData
+      discounts = discountsData
+      products = productsData.products
+      renderCoupons()
+      renderDiscounts()
+      populateProductSelect()
+    } catch (err: any) {
+      console.error(err)
+    }
+  }
+
+  function renderCoupons() {
+    const tbody = document.getElementById('coupons-tbody')!
+    if (coupons.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay cupones</td></tr>'
+      return
+    }
+
+    tbody.innerHTML = coupons.map(c => `
+      <tr>
+        <td><code class="coupon-code">${escapeHtml(c.code)}</code></td>
+        <td>${c.type === 'PERCENTAGE' ? '%' : '$'}</td>
+        <td>${Number(c.value)}${c.type === 'PERCENTAGE' ? '%' : ''}</td>
+        <td>${c.minPurchase ? '$' + Number(c.minPurchase).toLocaleString('es-CO') : '—'}</td>
+        <td>${c.usedCount}${c.maxUses ? '/' + c.maxUses : ''}</td>
+        <td><span class="status-badge ${c.isActive ? 'active' : 'inactive'}">${c.isActive ? 'Activo' : 'Inactivo'}</span></td>
+        <td>
+          <button class="btn-icon edit-coupon-btn" data-id="${c.id}" title="Editar">✏️</button>
+        </td>
+      </tr>
+    `).join('')
+
+    document.querySelectorAll('.edit-coupon-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditCouponModal(btn.getAttribute('data-id')!))
+    })
+  }
+
+  function renderDiscounts() {
+    const tbody = document.getElementById('discounts-tbody')!
+    if (discounts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">No hay descuentos</td></tr>'
+      return
+    }
+
+    tbody.innerHTML = discounts.map(d => {
+      const productNames = d.products?.map((p: any) => escapeHtml(p.product?.name)).join(', ') || '—'
+      return `
+        <tr>
+          <td>${escapeHtml(d.name)}</td>
+          <td>${d.type === 'PERCENTAGE' ? '%' : '$'}</td>
+          <td>${Number(d.value)}${d.type === 'PERCENTAGE' ? '%' : ''}</td>
+          <td>${productNames}</td>
+          <td>
+            ${d.startsAt ? new Date(d.startsAt).toLocaleDateString('es-CO') : '—'}
+            ${d.endsAt ? ' - ' + new Date(d.endsAt).toLocaleDateString('es-CO') : ''}
+          </td>
+          <td><span class="status-badge ${d.isActive ? 'active' : 'inactive'}">${d.isActive ? 'Activo' : 'Inactivo'}</span></td>
+          <td>
+            <button class="btn-icon edit-discount-btn" data-id="${d.id}" title="Editar">✏️</button>
+          </td>
+        </tr>
+      `
+    }).join('')
+
+    document.querySelectorAll('.edit-discount-btn').forEach(btn => {
+      btn.addEventListener('click', () => openEditDiscountModal(btn.getAttribute('data-id')!))
+    })
+  }
+
+  function populateProductSelect() {
+    const sel = document.getElementById('discount-products') as HTMLSelectElement
+    sel.innerHTML = products.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')
+  }
+
+  function setupEventListeners() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')!))
+    })
+
+    document.getElementById('add-coupon-btn')!.addEventListener('click', openCouponModal)
+    document.getElementById('add-discount-btn')!.addEventListener('click', openDiscountModal)
+
+    document.getElementById('close-coupon-modal')!.addEventListener('click', () => document.getElementById('coupon-modal')!.style.display = 'none')
+    document.getElementById('cancel-coupon-btn')!.addEventListener('click', () => document.getElementById('coupon-modal')!.style.display = 'none')
+    document.getElementById('coupon-modal')!.addEventListener('click', (e) => { if (e.target === e.currentTarget) (e.target as HTMLElement).style.display = 'none' })
+
+    document.getElementById('close-discount-modal')!.addEventListener('click', () => document.getElementById('discount-modal')!.style.display = 'none')
+    document.getElementById('cancel-discount-btn')!.addEventListener('click', () => document.getElementById('discount-modal')!.style.display = 'none')
+    document.getElementById('discount-modal')!.addEventListener('click', (e) => { if (e.target === e.currentTarget) (e.target as HTMLElement).style.display = 'none' })
+
+    document.getElementById('coupon-form')!.addEventListener('submit', handleCouponSubmit)
+    document.getElementById('discount-form')!.addEventListener('submit', handleDiscountSubmit)
+  }
+
+  function switchTab(tab: string) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'))
+    document.querySelector(`.tab-btn[data-tab="${tab}"]`)!.classList.add('active')
+
+    document.getElementById('coupons-tab')!.style.display = tab === 'coupons' ? 'block' : 'none'
+    document.getElementById('discounts-tab')!.style.display = tab === 'discounts' ? 'block' : 'none'
+  }
+
+  function openCouponModal() {
+    document.getElementById('coupon-modal-title')!.textContent = 'Nuevo cupón'
+    document.getElementById('coupon-id')!.value = ''
+    ;(document.getElementById('coupon-form') as HTMLFormElement).reset()
+    document.getElementById('coupon-modal')!.style.display = 'flex'
+  }
+
+  function openEditCouponModal(id: string) {
+    const c = coupons.find(x => x.id === id)
+    if (!c) return
+
+    document.getElementById('coupon-modal-title')!.textContent = 'Editar cupón'
+    document.getElementById('coupon-id')!.value = c.id
+    ;(document.getElementById('coupon-code') as HTMLInputElement).value = c.code
+    ;(document.getElementById('coupon-type') as HTMLSelectElement).value = c.type
+    ;(document.getElementById('coupon-value') as HTMLInputElement).value = c.value
+    ;(document.getElementById('coupon-min') as HTMLInputElement).value = c.minPurchase || ''
+    ;(document.getElementById('coupon-max') as HTMLInputElement).value = c.maxUses || ''
+    ;(document.getElementById('coupon-start') as HTMLInputElement).value = c.startsAt?.split('T')[0] || ''
+    ;(document.getElementById('coupon-end') as HTMLInputElement).value = c.endsAt?.split('T')[0] || ''
+
+    document.getElementById('coupon-modal')!.style.display = 'flex'
+  }
+
+  function openDiscountModal() {
+    document.getElementById('discount-modal-title')!.textContent = 'Nuevo descuento'
+    document.getElementById('discount-id')!.value = ''
+    ;(document.getElementById('discount-form') as HTMLFormElement).reset()
+    document.getElementById('discount-modal')!.style.display = 'flex'
+  }
+
+  function openEditDiscountModal(id: string) {
+    const d = discounts.find(x => x.id === id)
+    if (!d) return
+
+    document.getElementById('discount-modal-title')!.textContent = 'Editar descuento'
+    document.getElementById('discount-id')!.value = d.id
+    ;(document.getElementById('discount-name') as HTMLInputElement).value = d.name
+    ;(document.getElementById('discount-type') as HTMLSelectElement).value = d.type
+    ;(document.getElementById('discount-value') as HTMLInputElement).value = d.value
+    ;(document.getElementById('discount-start') as HTMLInputElement).value = d.startsAt?.split('T')[0] || ''
+    ;(document.getElementById('discount-end') as HTMLInputElement).value = d.endsAt?.split('T')[0] || ''
+
+    const sel = document.getElementById('discount-products') as HTMLSelectElement
+    const productIds = d.products?.map((p: any) => p.productId) || []
+    Array.from(sel.options).forEach(opt => { opt.selected = productIds.includes(opt.value) })
+
+    document.getElementById('discount-modal')!.style.display = 'flex'
+  }
+
+  async function handleCouponSubmit(e: Event) {
+    e.preventDefault()
+    const id = (document.getElementById('coupon-id') as HTMLInputElement).value
+
+    const data = {
+      code: (document.getElementById('coupon-code') as HTMLInputElement).value.toUpperCase(),
+      type: (document.getElementById('coupon-type') as HTMLSelectElement).value,
+      value: (document.getElementById('coupon-value') as HTMLInputElement).value,
+      minPurchase: (document.getElementById('coupon-min') as HTMLInputElement).value || null,
+      maxUses: (document.getElementById('coupon-max') as HTMLInputElement).value || null,
+      startsAt: (document.getElementById('coupon-start') as HTMLInputElement).value || null,
+      endsAt: (document.getElementById('coupon-end') as HTMLInputElement).value || null,
+    }
+
+    try {
+      await api.admin.createCoupon(data)
+      document.getElementById('coupon-modal')!.style.display = 'none'
+      loadData()
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
+  async function handleDiscountSubmit(e: Event) {
+    e.preventDefault()
+
+    const data = {
+      name: (document.getElementById('discount-name') as HTMLInputElement).value,
+      type: (document.getElementById('discount-type') as HTMLSelectElement).value,
+      value: (document.getElementById('discount-value') as HTMLInputElement).value,
+      startsAt: (document.getElementById('discount-start') as HTMLInputElement).value || null,
+      endsAt: (document.getElementById('discount-end') as HTMLInputElement).value || null,
+      productIds: Array.from((document.getElementById('discount-products') as HTMLSelectElement).selectedOptions).map(o => o.value),
+    }
+
+    try {
+      await api.admin.createDiscount(data)
+      document.getElementById('discount-modal')!.style.display = 'none'
+      loadData()
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+</script>
+
+<style>
+  .admin-page { padding-top: calc(60px + 2rem); padding-bottom: 4rem; }
+
+  .admin-header { margin-bottom: 2rem; }
+
+  .admin-title { font-family: var(--font-serif); font-size: 2rem; font-weight: 600; color: var(--color-black); }
+
+  .admin-sub { font-size: 0.875rem; color: var(--color-gray-400); margin-top: 0.25rem; }
+
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-gray-200); }
+
+  .tab-btn { padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-size: 0.875rem; font-weight: 500; color: var(--color-gray-500); }
+
+  .tab-btn.active { color: var(--color-black); border-bottom-color: var(--color-black); }
+
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+
+  .section-header h2 { font-size: 1.125rem; font-weight: 600; }
+
+  .items-table-wrap { background: var(--color-white); border: 1px solid var(--color-gray-200); border-radius: 8px; overflow-x: auto; margin-bottom: 2rem; }
+
+  .items-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+  .items-table th { text-align: left; padding: 1rem; background: var(--color-gray-50); font-weight: 600; color: var(--color-gray-500); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .items-table td { padding: 1rem; border-top: 1px solid var(--color-gray-100); }
+
+  .coupon-code { background: var(--color-gray-100); padding: 0.25rem 0.5rem; border-radius: 4px; font-family: monospace; }
+
+  .status-badge { display: inline-block; padding: 0.25rem 0.625rem; border-radius: 999px; font-size: 0.75rem; font-weight: 500; }
+
+  .status-badge.active { background: #dcfce7; color: #166534; }
+
+  .status-badge.inactive { background: #fee2e2; color: #991b1b; }
+
+  .btn-icon { background: none; border: none; cursor: pointer; padding: 0.25rem; font-size: 1rem; }
+
+  .loading, .empty { text-align: center; padding: 2rem; color: var(--color-gray-400); }
+
+  .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+
+  .modal-content { background: var(--color-white); border-radius: 12px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--color-gray-200); }
+
+  .modal-header h2 { font-size: 1.25rem; font-weight: 600; }
+
+  .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+
+  .admin-form { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .form-label { font-size: 0.875rem; font-weight: 500; }
+
+  .form-input { padding: 0.625rem 1rem; border: 1px solid var(--color-gray-200); border-radius: 8px; font-size: 0.875rem; }
+
+  .form-input:focus { outline: none; border-color: var(--color-black); }
+
+  .form-input[multiple] { height: auto; }
+
+  .form-group small { font-size: 0.75rem; color: var(--color-gray-400); }
+
+  .form-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1rem; }
+
+  .no-access { min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: var(--color-gray-400); }
+</style>

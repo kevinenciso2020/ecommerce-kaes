@@ -1,0 +1,27 @@
+---
+import ShopLayout from '../layouts/ShopLayout.astro'
+import HeroSection from '../components/sections/HeroSection.tsx'
+import CategoriesSection from '../components/sections/CategoriesSection.tsx'
+import FeaturedProducts from '../components/sections/FeaturedProducts.tsx'
+import CtaBanner from '../components/sections/CtaBanner.tsx'
+import '../styles/index.css'
+import { api } from '../lib/api.js'
+
+let featuredProducts: any[] = []
+
+try {
+  const data = await api.products.list({ featured: true, limit: 8 })
+  featuredProducts = Array.isArray(data.products) ? data.products : []
+} catch (e) {
+  console.error('Error loading products:', e)
+}
+---
+
+<ShopLayout title="Inicio" description="Ropa con personalidad. Prendas atemporales para quienes se atreven a definir su propio estilo.">
+  <HeroSection client:load />
+  <CategoriesSection client:visible />
+  {featuredProducts.length > 0 && (
+    <FeaturedProducts client:visible products={featuredProducts} />
+  )}
+  <CtaBanner client:visible />
+</ShopLayout>
