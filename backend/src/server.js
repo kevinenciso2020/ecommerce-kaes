@@ -23,6 +23,10 @@ const PORT = process.env.PORT || 8000
 // ── Seguridad ────────────────────────────────────────────────
 app.use(helmet())
 
+// Trust proxy para Railway (necesario para rate limiting con X-Forwarded-For)
+app.set('trust proxy', 1)
+
+// ── CORS ───────────────────────────────────────────────────────
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = [
@@ -45,6 +49,7 @@ app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max:      100,
   message:  { error: 'Demasiadas peticiones, intenta más tarde' },
+  validate: { xForwardedForHeader: false },
 }))
 
 // ── Cookies ────────────────────────────────────────────────
