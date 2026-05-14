@@ -21,6 +21,7 @@ const app  = express()
 const PORT = process.env.PORT || 8000
 
 // ── Seguridad ────────────────────────────────────────────────
+// Railway deployment fix - trust proxy enabled
 app.use(helmet())
 
 // Trust proxy para Railway (necesario para rate limiting con X-Forwarded-For)
