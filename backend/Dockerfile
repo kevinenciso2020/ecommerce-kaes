@@ -11,7 +11,7 @@ RUN npx prisma generate
 
 COPY src ./src/
 
-EXPOSE 8000
+EXPOSE 3001
 
 ENV NODE_ENV=production
 
