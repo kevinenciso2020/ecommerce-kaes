@@ -1,5 +1,5 @@
-const BASE_URL = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001/api/v1'
-const FRONTEND_URL = import.meta.env.PUBLIC_FRONTEND_URL || 'http://localhost:4321'
+const BASE_URL = import.meta.env.PUBLIC_API_URL || 'https://kaes-ecomerce-production.up.railway.app/api/v1'
+const FRONTEND_URL = import.meta.env.PUBLIC_FRONTEND_URL || 'https://kaes-ecomerce-production.up.railway.app'
 
 let isRefreshing = false
 let refreshSubscribers = []
