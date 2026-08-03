@@ -26,7 +26,7 @@ async function main() {
   const categorias = [
     { name: 'Camisetas',  slug: 'camisetas',  description: 'Camisetas y tops' },
     { name: 'Pantalones', slug: 'pantalones', description: 'Pantalones y jeans' },
-    { name: 'Shorts',     slug: 'shorts',     description: 'Shorts' },
+    { name: 'Vestidos',   slug: 'vestidos',   description: 'Vestidos y faldas' },
     { name: 'Accesorios', slug: 'accesorios', description: 'Accesorios y complementos' },
     { name: 'Zapatos',    slug: 'zapatos',    description: 'Calzado' },
   ]

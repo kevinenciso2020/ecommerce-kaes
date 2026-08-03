@@ -14,9 +14,9 @@ const categories = [
     icon: `<svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M208,40H48A16,16,0,0,0,32,56V88H224V56A16,16,0,0,0,208,40Zm-32,32H80V200h16V112H160V200a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16V72a16,16,0,0,0-16-16H208Z"></path></svg>`,
   },
   {
-    name: "Shorts",
-    slug: "shorts",
-    icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M4 6l1.5 14a1 1 0 0 0 1 .9h4.2a1 1 0 0 0 1-.78L12 12l.3 8.12a1 1 0 0 0 1 .78h4.2a1 1 0 0 0 1-.9L20 6"/></svg>`,
+    name: "Vestidos",
+    slug: "vestidos",
+    icon: `<svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M240,64H224V56a24,24,0,0,0-24-24H168V24a8,8,0,0,0-16,0v8H104V24a8,8,0,0,0-16,0v8H56A24,24,0,0,0,32,56v8H16a8,8,0,0,0,0,16H32v88a16,16,0,0,0,16,16h8v48a8,8,0,0,0,16,0V152h24V224a8,8,0,0,0,16,0V152h48v24a8,8,0,0,0,16,0V152h8a16,16,0,0,0,16-16V88H240a8,8,0,0,0,0-16Z"></path></svg>`,
   },
   {
     name: "Accesorios",
