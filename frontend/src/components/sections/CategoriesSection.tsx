@@ -6,22 +6,22 @@ const categories = [
   {
     name: "Camisetas",
     slug: "camisetas",
-    icon: `<svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M216,40H40A16,16,0,0,0,24,56V80a8,8,0,0,0,8,8h32V208a16,16,0,0,0,16,16h64a16,16,0,0,0,16-16V88h32a8,8,0,0,0,8-8V56A16,16,0,0,0,216,40ZM40,48H216l.2,16H152V88a8,8,0,0,0-2.3-5.6l-32-40a8,8,0,0,0-11.3,0l-32,40A8,8,0,0,0,104,88V64H39.8Z"></path></svg>`,
+    icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4l-4 4-4-4H4l4 6v10h8V10l4-6h-4z"/><path d="M10 4.2c0 1.4.9 2.3 2 2.3s2-.9 2-2.3"/></svg>`,
   },
   {
     name: "Pantalones",
     slug: "pantalones",
-    icon: `<svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M208,40H48A16,16,0,0,0,32,56V88H224V56A16,16,0,0,0,208,40Zm-32,32H80V200h16V112H160V200a16,16,0,0,1-16,16H96a16,16,0,0,1-16-16V72a16,16,0,0,0-16-16H208Z"></path></svg>`,
+    icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v2l-2 14h-4l-1-7h-2l-1 7H6L4 6V4z"/><line x1="4" y1="6" x2="20" y2="6"/></svg>`,
   },
   {
     name: "Shorts",
     slug: "shorts",
-    icon: `<svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M232,64H24A16,16,0,0,0,8,80v96a16,16,0,0,0,16,16H68a8,8,0,0,0,7.59-5.47L96,131.71V216a8,8,0,0,0,16,0V136a8,8,0,0,0-15-5.27L89.3,144H24a16,16,0,0,1-16-16V80A16,16,0,0,1,24,64H232a16,16,0,0,1,16,16v48a16,16,0,0,1-16,16H166.7l-7.7-13.27A8,8,0,0,0,144,136v80a8,8,0,0,0,16,0V131.71l20.41,54.82A8,8,0,0,0,188,192h44a16,16,0,0,0,16-16V80A16,16,0,0,0,232,64Z"></path></svg>`,
+    icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v2l-2 8h-4l-1-3h-2l-1 3H6L4 6V4z"/><line x1="4" y1="6" x2="20" y2="6"/></svg>`,
   },
   {
     name: "Accesorios",
     slug: "accesorios",
-    icon: `<svg width="28" height="28" viewBox="0 0 256 256" fill="currentColor"><path d="M244,80a12,12,0,0,0-12-12H224a32,32,0,0,1-32-32V24A12,12,0,0,0,180,12H76A12,12,0,0,0,64,24V36A32,32,0,0,1,32,68H24a12,12,0,0,0,0,24H32a32,32,0,0,1,32,32v12a12,12,0,0,0,12,12h28v20a60,60,0,0,0,32,52.26V244a12,12,0,0,0,24,0V204.26A60,60,0,0,0,156,152V136h12a32,32,0,0,0,32-32H192a12,12,0,0,0,0-24ZM96,60A36,36,0,0,1,127.85,24H128.15A36,36,0,0,1,160,60ZM56,100A36,36,0,0,1,80.15,64H175.85A36,36,0,0,1,200,100v32H56ZM136,152A76,76,0,0,0,96,208v-40a12,12,0,0,0-24,0v40a76,76,0,0,0,64,75.85V152Z"></path></svg>`,
+    icon: `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h14l-1 11H6L5 9z"/><path d="M8 9V7a4 4 0 018 0v2"/><circle cx="12" cy="14.5" r="0.9" fill="currentColor"/></svg>`,
   },
 ];
 
